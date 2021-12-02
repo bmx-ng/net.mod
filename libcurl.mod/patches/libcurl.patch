@@ -1,0 +1,91 @@
+--- curl-7.80.0/lib/curl_config.h	2021-12-01 10:20:21.000000000 +0000
++++ libcurl.mod/libcurl/lib/curl_config.h	2021-12-01 23:22:50.000000000 +0000
+@@ -56,7 +56,7 @@
+ /* #undef CURL_DISABLE_IMAP */
+ 
+ /* to disable LDAP */
+-/* #undef CURL_DISABLE_LDAP */
++#define CURL_DISABLE_LDAP 1
+ 
+ /* to disable LDAPS */
+ /* #undef CURL_DISABLE_LDAPS */
+@@ -400,7 +400,7 @@
+ /* #undef HAVE_LIBSSH2 */
+ 
+ /* Define to 1 if you have the <libssh2.h> header file. */
+-/* #undef HAVE_LIBSSH2_H */
++#define HAVE_LIBSSH2_H 1
+ 
+ /* Define to 1 if you have the <libssh/libssh.h> header file. */
+ /* #undef HAVE_LIBSSH_LIBSSH_H */
+@@ -964,7 +964,7 @@
+ #define USE_MANUAL 1
+ 
+ /* if mbedTLS is enabled */
+-/* #undef USE_MBEDTLS */
++#define USE_MBEDTLS 1
+ 
+ /* if MesaLink is enabled */
+ /* #undef USE_MESALINK */
+
+
+--- curl-7.80.0/lib/vtls/mbedtls.c	2021-11-09 07:35:38.000000000 +0000
++++ libcurl.mod/libcurl/lib/vtls/mbedtls.c	2021-12-02 21:19:33.000000000 +0000
+@@ -440,13 +440,9 @@
+ 
+   infof(data, "mbedTLS: Connecting to %s:%ld", hostname, port);
+ 
+-  mbedtls_ssl_config_init(&backend->config);
+ 
++  mbedtls_ssl_config_init(&backend->config);
+   mbedtls_ssl_init(&backend->ssl);
+-  if(mbedtls_ssl_setup(&backend->ssl, &backend->config)) {
+-    failf(data, "mbedTLS: ssl_init failed");
+-    return CURLE_SSL_CONNECT_ERROR;
+-  }
+   ret = mbedtls_ssl_config_defaults(&backend->config,
+                                     MBEDTLS_SSL_IS_CLIENT,
+                                     MBEDTLS_SSL_TRANSPORT_STREAM,
+@@ -456,6 +452,11 @@
+     return CURLE_SSL_CONNECT_ERROR;
+   }
+ 
++  if(mbedtls_ssl_setup(&backend->ssl, &backend->config)) {
++    failf(data, "mbedTLS: ssl_init failed");
++    return CURLE_SSL_CONNECT_ERROR;
++  }
++
+   /* new profile with RSA min key len = 1024 ... */
+   mbedtls_ssl_conf_cert_profile(&backend->config,
+                                 &mbedtls_x509_crt_profile_fr);
+@@ -672,8 +673,8 @@
+     unsigned char *pubkey = NULL;
+ 
+ #if MBEDTLS_VERSION_NUMBER >= 0x03000000
+-    if(!peercert || !peercert->MBEDTLS_PRIVATE(raw).MBEDTLS_PRIVATE(p) ||
+-       !peercert->MBEDTLS_PRIVATE(raw).MBEDTLS_PRIVATE(len)) {
++    if(!peercert || !peercert->raw.p ||
++       !peercert->raw.len) {
+ #else
+     if(!peercert || !peercert->raw.p || !peercert->raw.len) {
+ #endif
+@@ -700,8 +701,8 @@
+        https://github.com/ARMmbed/mbedtls/issues/396 */
+ #if MBEDTLS_VERSION_NUMBER >= 0x03000000
+     if(mbedtls_x509_crt_parse_der(p,
+-                        peercert->MBEDTLS_PRIVATE(raw).MBEDTLS_PRIVATE(p),
+-                        peercert->MBEDTLS_PRIVATE(raw).MBEDTLS_PRIVATE(len))) {
++                        peercert->raw.p,
++                        peercert->raw.len)) {
+ #else
+     if(mbedtls_x509_crt_parse_der(p, peercert->raw.p, peercert->raw.len)) {
+ #endif
+@@ -711,7 +712,7 @@
+     }
+ 
+ #if MBEDTLS_VERSION_NUMBER >= 0x03000000
+-    size = mbedtls_pk_write_pubkey_der(&p->MBEDTLS_PRIVATE(pk), pubkey,
++    size = mbedtls_pk_write_pubkey_der(&p->pk, pubkey,
+                                        PUB_DER_MAX_BYTES);
+ #else
+     size = mbedtls_pk_write_pubkey_der(&p->pk, pubkey, PUB_DER_MAX_BYTES);
