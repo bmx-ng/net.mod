@@ -39,7 +39,7 @@ Import "-framework SystemConfiguration"
 ?
 
 
-Import "src/include/*.h"
+Import "libcurl/include/*.h"
 Import "curl_glue.cpp"
 
 Extern
