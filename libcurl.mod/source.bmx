@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2021 Bruce A Henderson
+' Copyright (c) 2007-2022 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,8 @@ Import Net.libssh2
 Import Net.mbedtls
 Import "../mbedtls.mod/mbedtls/include/*.h"
 
-?win32
-'Import "ssl/include/*.h"
-?
-
-'?Not macos
-Import "../libssh2.mod/include_all/*.h"
-'?
+Import "../libssh2.mod/libssh2/src/*.h"
+Import "../libssh2.mod/libssh2/include/*.h"
 
 'Import "c-ares/include/*.h"
 

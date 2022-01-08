@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2021 Bruce A Henderson
+' Copyright (c) 2007-2022 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,6 @@ Import BRL.LinkedList
 
 Import "common.bmx"
 
-
 Rem
 bbdoc: Sets up the program environment that libcurl needs.
 about: This will be run internally on the creation of the first #TCurlEasy with default values, but you can
@@ -52,19 +51,19 @@ Rem
 bbdoc: Returns a string describing a libcurl error code.
 End Rem
 Function CurlError:String(errorCode:Int)
-	Return String.fromCString(curl_easy_strerror(errorCode))
+	Return String.fromUTF8String(curl_easy_strerror(errorCode))
 End Function
 
 Type TCurlHasLists Abstract
 
-	Field sLists:Byte Ptr[]
+	Field sLists:TSList[]
 
 	Method freeLists()
 		If sLists Then
 		
 			For Local i:Int = 0 Until sLists.length
 			
-				bmx_curl_slist_free(sLists[i])
+				curl_slist_free_all(sLists[i].slist)
 			
 			Next
 			
@@ -128,7 +127,7 @@ Type TCurlEasy Extends TCurlHasLists
 
 	Method setOpt(option:Int, parameter:Byte Ptr)
 		If easyHandlePtr Then
-			curl_easy_setopt(easyHandlePtr, option, parameter)
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, option, parameter)
 		End If
 	End Method
 
@@ -151,7 +150,7 @@ Type TCurlEasy Extends TCurlHasLists
 	End Rem
 	Method setOptInt:Int(option:Int, parameter:Int)
 		If easyHandlePtr Then
-			Return bmx_curl_easy_setopt_long(easyHandlePtr, option, parameter)
+			Return bmx_curl_easy_setopt_int(easyHandlePtr, option, parameter)
 		End If
 	End Method
 
@@ -169,7 +168,7 @@ Type TCurlEasy Extends TCurlHasLists
 	End Rem
 	Method setOptBytePtr:Int(option:Int, parameter:Byte Ptr)
 		If easyHandlePtr Then
-			Return curl_easy_setopt(easyHandlePtr, option, parameter)
+			Return bmx_curl_easy_setopt_ptr(easyHandlePtr, option, parameter)
 		End If
 	End Method
 
@@ -195,11 +194,11 @@ Type TCurlEasy Extends TCurlHasLists
 			End If
 		
 			If parameter Then
-				opt.s = parameter.toCString()
-				Return curl_easy_setopt(easyHandlePtr, option, opt.s)
+				opt.s = parameter.toUTF8String()
+				Return bmx_curl_easy_setopt_str(easyHandlePtr, option, opt.s)
 			Else
 				opt.s = Null
-				Return curl_easy_setopt(easyHandlePtr, option, Null)
+				Return bmx_curl_easy_setopt_ptr(easyHandlePtr, option, Null)
 			End If
 		End If
 	End Method
@@ -295,7 +294,7 @@ Type TCurlEasy Extends TCurlHasLists
 			setOptInt(CURLOPT_NOPROGRESS, 0)
 			
 			' set the callback
-			curl_easy_setopt(easyHandlePtr, CURLOPT_XFERINFOFUNCTION, xferinfoFunction)
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_XFERINFOFUNCTION, xferinfoFunction)
 			
 			' set user data. Need to set it to at least Null so the callback doesn't send us a NULL pointer instead of a Null Object.
 			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_XFERINFODATA, data)
@@ -318,7 +317,7 @@ Type TCurlEasy Extends TCurlHasLists
 			dbFunction = debugFunction
 			dbData = data
 		
-			curl_easy_setopt(easyHandlePtr, CURLOPT_DEBUGFUNCTION, dbCallback)
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_DEBUGFUNCTION, dbCallback)
 			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_DEBUGDATA, Self)
 		End If
 	End Method
@@ -341,7 +340,7 @@ Type TCurlEasy Extends TCurlHasLists
 	Method setWriteStream(stream:TStream)
 		If easyHandlePtr Then
 
-			curl_easy_setopt(easyHandlePtr, CURLOPT_WRITEFUNCTION, writeStreamCallback)
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_WRITEFUNCTION, writeStreamCallback)
 			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_WRITEDATA, stream)
 	
 		End If		
@@ -370,7 +369,7 @@ Type TCurlEasy Extends TCurlHasLists
 			wrFunction = writeFunction
 			wrData = data
 		
-			curl_easy_setopt(easyHandlePtr, CURLOPT_WRITEFUNCTION, wrCallback)
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_WRITEFUNCTION, wrCallback)
 			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_WRITEDATA, Self)
 		End If
 	End Method
@@ -408,7 +407,7 @@ Type TCurlEasy Extends TCurlHasLists
 	Method setReadStream(stream:TStream)
 		If easyHandlePtr Then
 
-			curl_easy_setopt(easyHandlePtr, CURLOPT_READFUNCTION, readStreamCallback)
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_READFUNCTION, readStreamCallback)
 			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_READDATA, stream)
 	
 		End If		
@@ -445,7 +444,7 @@ Type TCurlEasy Extends TCurlHasLists
 			rdFunction = readFunction
 			rdData = data
 		
-			curl_easy_setopt(easyHandlePtr, CURLOPT_READFUNCTION, rdCallback)
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_READFUNCTION, rdCallback)
 			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_READDATA, Self)
 		End If
 	End Method
@@ -485,7 +484,7 @@ Type TCurlEasy Extends TCurlHasLists
 			hrFunction = headerFunction
 			hrData = data
 		
-			curl_easy_setopt(easyHandlePtr, CURLOPT_HEADERFUNCTION, hrCallback)
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_HEADERFUNCTION, hrCallback)
 			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_WRITEHEADER, Self)
 		End If
 	End Method
@@ -514,7 +513,7 @@ Type TCurlEasy Extends TCurlHasLists
 	End Rem
 	Method httpPost(formData:TCurlFormData)
 		If easyHandlePtr Then
-			bmx_curl_easy_setopt_httppost(easyHandlePtr, formData.httppostPtr);
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_HTTPPOST, formData.httpPost.post);
 		End If
 	End Method
 	
@@ -545,7 +544,7 @@ Type TCurlEasy Extends TCurlHasLists
 			If headers Then
 				processArray(CURLOPT_HTTPHEADER, headers)
 			Else
-				curl_easy_setopt(easyHandlePtr, CURLOPT_HTTPHEADER, Null)
+				bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_HTTPHEADER, Null)
 			End If
 		End If
 	End Method
@@ -567,7 +566,7 @@ Type TCurlEasy Extends TCurlHasLists
 			If aliases Then
 				processArray(CURLOPT_HTTP200ALIASES, aliases)
 			Else
-				curl_easy_setopt(easyHandlePtr, CURLOPT_HTTP200ALIASES, Null)
+				bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_HTTP200ALIASES, Null)
 			End If
 		End If
 	End Method
@@ -583,7 +582,7 @@ Type TCurlEasy Extends TCurlHasLists
 			If commands Then
 				processArray(CURLOPT_PREQUOTE, commands)
 			Else
-				curl_easy_setopt(easyHandlePtr, CURLOPT_PREQUOTE, Null)
+				bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_PREQUOTE, Null)
 			End If
 		End If
 	End Method
@@ -601,7 +600,7 @@ Type TCurlEasy Extends TCurlHasLists
 			If commands Then
 				processArray(CURLOPT_QUOTE, commands)
 			Else
-				curl_easy_setopt(easyHandlePtr, CURLOPT_QUOTE, Null)
+				bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_QUOTE, Null)
 			End If
 		End If
 	End Method
@@ -617,7 +616,7 @@ Type TCurlEasy Extends TCurlHasLists
 			If commands Then
 				processArray(CURLOPT_POSTQUOTE, commands)
 			Else
-				curl_easy_setopt(easyHandlePtr, CURLOPT_POSTQUOTE, Null)
+				bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_POSTQUOTE, Null)
 			End If
 		End If
 	End Method
@@ -634,7 +633,7 @@ Type TCurlEasy Extends TCurlHasLists
 			If variables Then
 				processArray(CURLOPT_TELNETOPTIONS, variables)
 			Else
-				curl_easy_setopt(easyHandlePtr, CURLOPT_TELNETOPTIONS, Null)
+				bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_TELNETOPTIONS, Null)
 			End If
 		End If
 	End Method
@@ -675,7 +674,7 @@ Type TCurlEasy Extends TCurlHasLists
 				Text = ""
 			End If
 			
-			Local s:Byte Ptr = Text.toCString()
+			Local s:Byte Ptr = Text.toUTF8String()
 			
 			Local s2:Byte Ptr = curl_easy_escape(easyHandlePtr, s, Text.length)
 			
@@ -684,7 +683,7 @@ Type TCurlEasy Extends TCurlHasLists
 
 			If s2 Then
 
-				Text = String.fromCString(s2)
+				Text = String.fromUTF8String(s2)
 
 				' free curl string
 				curl_free(s2)
@@ -708,7 +707,7 @@ Type TCurlEasy Extends TCurlHasLists
 				Text = ""
 			End If
 			
-			Local s:Byte Ptr = Text.toCString()
+			Local s:Byte Ptr = Text.toUTF8String()
 			Local out:Int
 			
 			Local s2:Byte Ptr = curl_easy_unescape(easyHandlePtr, s, Text.length, Varptr out)
@@ -745,23 +744,27 @@ Type TCurlEasy Extends TCurlHasLists
 
 		If array And array.length > 0 Then	
 
-			Local slist:Byte Ptr = bmx_curl_slist_new()
+			Local sList:TSList = New TSList
 			
 			For Local i:Int = 0 Until array.length
 			
-				Local txt:Byte Ptr = array[i].toCString()
+				Local txt:Byte Ptr = array[i].toUTF8String()
 				
-				bmx_curl_add_element(slist, txt)
-				
+				Local tmp:SCurlSlist Ptr = curl_slist_append(sList.slist, txt)
+				If tmp Then
+					sList.slist = tmp
+					sList.count :+ 1
+				End If
+
 				MemFree(txt)
 			
 			Next
 			
-			bmx_curl_easy_setopt_slist(easyHandlePtr, option, slist)
+			bmx_curl_easy_setopt_slist(easyHandlePtr, option, sList.slist)
 			
 			sLists = sLists[..sLists.length + 1]
 			
-			sLists[sLists.length - 1] = slist
+			sLists[sLists.length - 1] = sList
 	
 		End If
 	End Method
@@ -786,7 +789,7 @@ about: This is used in conjunction with the #httpPost method.
 End Rem
 Type TCurlFormData Extends TCurlHasLists 
 
-	Field httppostPtr:Byte Ptr
+	Field httppost:SCurlHttpPost
 	
 	Field count:Int = 0
 	Field ptrs:Byte Ptr[] = New Byte Ptr[0]
@@ -797,7 +800,7 @@ Type TCurlFormData Extends TCurlHasLists
 	Function Create:TCurlFormData()
 		Local this:TCurlFormData = New TCurlFormData
 		
-		this.httppostPtr = bmx_curl_new_httppostPtr()
+		'this.httppostPtr = bmx_curl_new_httppostPtr()
 		
 		Return this
 	End Function
@@ -806,20 +809,20 @@ Type TCurlFormData Extends TCurlHasLists
 	bbdoc: Add simple name/content section, with optional contenttype and/or headers.
 	End Rem
 	Method addContent(name:String, contents:String, contentType:String = Null, headers:String[] = Null)
-		Local n:Byte Ptr = name.toCString()
-		Local c:Byte Ptr = contents.toCString()
+		Local n:Byte Ptr = name.toUTF8String()
+		Local c:Byte Ptr = contents.toUTF8String()
 		Local t:Byte Ptr
 		
 		addPtr(n)
 		addPtr(c)
 		
 		If contentType Then
-			t = contentType.toCString()
+			t = contentType.toUTF8String()
 			addPtr(t)
 			
-			bmx_curl_formadd_name_content_type(httppostPtr, n, c, t)
+			bmx_curl_formadd_name_content_type(httppost, n, c, t)
 		Else
-			bmx_curl_formadd_name_content(httppostPtr, n, c)	
+			bmx_curl_formadd_name_content(httppost, n, c)	
 		End If
 		
 	End Method
@@ -828,20 +831,20 @@ Type TCurlFormData Extends TCurlHasLists
 	bbdoc: Add simple file section, with optional contenttype.
 	End Rem
 	Method addFile(name:String, file:String, contentType:String = Null, headers:String[] = Null)
-		Local n:Byte Ptr = name.toCString()
-		Local f:Byte Ptr = file.toCString()
+		Local n:Byte Ptr = name.toUTF8String()
+		Local f:Byte Ptr = file.toUTF8String()
 		Local t:Byte Ptr
 		
 		addPtr(n)
 		addPtr(f)
 		
 		If contentType Then
-			t = contentType.toCString()
+			t = contentType.toUTF8String()
 			addPtr(t)
 			
-			bmx_curl_formadd_name_file_type(httppostPtr, n, f, t, 1)
+			bmx_curl_formadd_name_file_type(httppost, n, f, t, 1)
 		Else
-			bmx_curl_formadd_name_file(httppostPtr, n, f, 1)	
+			bmx_curl_formadd_name_file(httppost, n, f, 1)	
 		End If
 	
 	End Method
@@ -850,20 +853,20 @@ Type TCurlFormData Extends TCurlHasLists
 	bbdoc: Add the @content of a file as a normal post text value, with optional contenttype.
 	End Rem
 	Method addFileContent(name:String, file:String, contentType:String = Null, headers:String[] = Null)
-		Local n:Byte Ptr = name.toCString()
-		Local f:Byte Ptr = file.toCString()
+		Local n:Byte Ptr = name.toUTF8String()
+		Local f:Byte Ptr = file.toUTF8String()
 		Local t:Byte Ptr
 		
 		addPtr(n)
 		addPtr(f)
 		
 		If contentType Then
-			t = contentType.toCString()
+			t = contentType.toUTF8String()
 			addPtr(t)
 			
-			bmx_curl_formadd_name_file_type(httppostPtr, n, f, t, 2)
+			bmx_curl_formadd_name_file_type(httppost, n, f, t, 2)
 		Else
-			bmx_curl_formadd_name_file(httppostPtr, n, f, 2)	
+			bmx_curl_formadd_name_file(httppost, n, f, 2)	
 		End If
 	
 	End Method
@@ -872,13 +875,13 @@ Type TCurlFormData Extends TCurlHasLists
 	bbdoc: Add a @buffer of @length bytes to the post.
 	End Rem
 	Method addBuffer(name:String, bufName:String, buffer:Byte Ptr, length:Int, headers:String[] = Null)
-		Local n:Byte Ptr = name.toCString()
-		Local b:Byte Ptr = bufName.toCString()
+		Local n:Byte Ptr = name.toUTF8String()
+		Local b:Byte Ptr = bufName.toUTF8String()
 		
 		addPtr(n)
 		addPtr(b)
 		
-		bmx_curl_formadd_name_buffer(httppostPtr, n, b, buffer, length)	
+		bmx_curl_formadd_name_buffer(httppost, n, b, buffer, length)	
 	End Method
 	
 	
@@ -902,9 +905,9 @@ Type TCurlFormData Extends TCurlHasLists
 	End Method
 	
 	Method free()
-		If httppostPtr Then
-			bmx_curl_httppostPtr_delete(httppostPtr)
-			httppostPtr = Null
+		If httppost.post Then
+			curl_formfree(httppost.post)
+			httppost.post = Null
 		End If
 		
 		If ptrs And count > 0 Then
@@ -951,7 +954,7 @@ Type TCurlInfo
 		error = bmx_curl_easy_getinfo_string(easyHandlePtr, CURLINFO_EFFECTIVE_URL, Varptr s)
 		
 		If Not error Then
-			Return String.fromCString(s)
+			Return String.fromUTF8String(s)
 		End If
 		
 		Return Null
@@ -965,7 +968,7 @@ Type TCurlInfo
 	Method responseCode:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_RESPONSE_CODE, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_RESPONSE_CODE, Varptr value)
 		
 		Return value
 	End Method
@@ -976,7 +979,7 @@ Type TCurlInfo
 	Method httpConnectCode:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_FILETIME, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_FILETIME, Varptr value)
 		
 		Return value
 	End Method
@@ -991,7 +994,7 @@ Type TCurlInfo
 	Method FileTime:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_HTTPAUTH_AVAIL, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_HTTPAUTH_AVAIL, Varptr value)
 		
 		Return value
 	End Method
@@ -1072,7 +1075,7 @@ Type TCurlInfo
 	Method redirectCount:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_REDIRECT_COUNT, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_REDIRECT_COUNT, Varptr value)
 		
 		Return value
 	End Method
@@ -1131,7 +1134,7 @@ Type TCurlInfo
 	Method headerSize:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_HEADER_SIZE, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_HEADER_SIZE, Varptr value)
 		
 		Return value
 	End Method
@@ -1144,7 +1147,7 @@ Type TCurlInfo
 	Method requestSize:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_REQUEST_SIZE, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_REQUEST_SIZE, Varptr value)
 		
 		Return value
 	End Method
@@ -1155,7 +1158,7 @@ Type TCurlInfo
 	Method sslVerifyResult:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_SSL_VERIFYRESULT, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_SSL_VERIFYRESULT, Varptr value)
 		
 		Return value
 	End Method
@@ -1167,8 +1170,10 @@ Type TCurlInfo
 	End Rem
 	Method sslEngines:String[]()
 		
-		Return curlProcessSlist(bmx_curl_easy_getinfo_slist(easyHandlePtr, CURLINFO_SSL_ENGINES, Varptr error))
-		
+		Local slist:TSList = New TSList
+		error = bmx_curl_easy_getinfo_slist(easyHandlePtr, CURLINFO_SSL_ENGINES, slist.slist)
+		Return curlProcessSlist(slist)
+
 	End Method
 	
 	Rem
@@ -1206,7 +1211,7 @@ Type TCurlInfo
 		
 		If Not error Then
 			If s Then
-				Return String.fromCString(s)
+				Return String.fromUTF8String(s)
 			End If
 		End If
 		
@@ -1227,7 +1232,7 @@ Type TCurlInfo
 	Method httpAuthAvail:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_HTTPAUTH_AVAIL, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_HTTPAUTH_AVAIL, Varptr value)
 		
 		Return value
 	End Method
@@ -1239,7 +1244,7 @@ Type TCurlInfo
 	Method proxyAuthAvail:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_PROXYAUTH_AVAIL, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_PROXYAUTH_AVAIL, Varptr value)
 		
 		Return value
 	End Method
@@ -1250,7 +1255,7 @@ Type TCurlInfo
 	Method osErrno:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_OS_ERRNO, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_OS_ERRNO, Varptr value)
 		
 		Return value
 	End Method
@@ -1263,7 +1268,7 @@ Type TCurlInfo
 	Method numConnects:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_NUM_CONNECTS, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_NUM_CONNECTS, Varptr value)
 		
 		Return value
 	End Method
@@ -1275,7 +1280,9 @@ Type TCurlInfo
 	End Rem
 	Method cookieList:String[]()
 
-		Return curlProcessSlist(bmx_curl_easy_getinfo_slist(easyHandlePtr, CURLINFO_COOKIELIST, Varptr error))
+		Local slist:TSList = New TSList
+		error = bmx_curl_easy_getinfo_slist(easyHandlePtr, CURLINFO_COOKIELIST, slist.slist)
+		Return curlProcessSlist(slist)
 
 	End Method
 	
@@ -1288,7 +1295,7 @@ Type TCurlInfo
 	Method lastSocket:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_LASTSOCKET, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_LASTSOCKET, Varptr value)
 		
 		Return value
 	End Method
@@ -1305,7 +1312,7 @@ Type TCurlInfo
 		
 		If Not error Then
 			If s Then
-				Return String.fromCString(s)
+				Return String.fromUTF8String(s)
 			End If
 		End If
 		
@@ -1595,7 +1602,7 @@ Type TCurlMulti
 	End Rem
 	Method multiSetOptInt(option:Int, parameter:Int)
 		If multiHandlePtr Then
-			bmx_curl_multi_setopt_long(multiHandlePtr, option, parameter)
+			bmx_curl_multi_setopt_int(multiHandlePtr, option, parameter)
 		End If
 	End Method
 	

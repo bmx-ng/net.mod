@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2021 Bruce A Henderson
+' Copyright (c) 2007-2022 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -51,6 +51,8 @@ Const CURLOPTTYPE_OBJECTPOINT:Int = 10000
 Const CURLOPTTYPE_STRINGPOINT:Int = 10000
 Const CURLOPTTYPE_FUNCTIONPOINT:Int = 20000
 Const CURLOPTTYPE_OFF_T:Int = 30000
+Const CURLOPTTYPE_BLOB:Int = 40000
+Const CURLOPTTYPE_CBPOINT:Int = CURLOPTTYPE_OBJECTPOINT
 
 ' see CURLOPT_WRITEDATA
 Const CURLOPT_FILE:Int = CURLOPTTYPE_OBJECTPOINT + 1
@@ -1855,6 +1857,199 @@ bbdoc: Post MIME data.
 End Rem
 Const CURLOPT_MIMEPOST:Int = CURLOPTTYPE_OBJECTPOINT + 269
 
+Rem
+bbdoc:  Time to use with the CURLOPT_TIMECONDITION. Specified in number of seconds since 1 Jan 1970. 
+End Rem
+Const CURLOPT_TIMEVALUE_LARGE:Int = CURLOPTTYPE_OFF_T + 270
+
+Rem
+bbdoc:  Head start in milliseconds to give happy eyeballs. 
+End Rem
+Const CURLOPT_HAPPY_EYEBALLS_TIMEOUT_MS:Int = CURLOPTTYPE_LONG + 271
+
+Rem
+bbdoc:  Function that will be called before a resolver request is made 
+End Rem
+Const CURLOPT_RESOLVER_START_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 272
+
+Rem
+bbdoc:  User data to pass to the resolver start callback. 
+End Rem
+Const CURLOPT_RESOLVER_START_DATA:Int = CURLOPTTYPE_CBPOINT + 273
+
+Rem
+bbdoc:  send HAProxy PROXY protocol header? 
+End Rem
+Const CURLOPT_HAPROXYPROTOCOL:Int = CURLOPTTYPE_LONG + 274
+
+Rem
+bbdoc:  shuffle addresses before use when DNS returns multiple 
+End Rem
+Const CURLOPT_DNS_SHUFFLE_ADDRESSES:Int = CURLOPTTYPE_LONG + 275
+
+Rem
+bbdoc:  Specify which TLS 1.3 ciphers suites to use 
+End Rem
+Const CURLOPT_TLS13_CIPHERS:Int = CURLOPTTYPE_STRINGPOINT + 276
+Const CURLOPT_PROXY_TLS13_CIPHERS:Int = CURLOPTTYPE_STRINGPOINT + 277
+
+Rem
+bbdoc:  Disallow specifying username/login in URL. 
+End Rem
+Const CURLOPT_DISALLOW_USERNAME_IN_URL:Int = CURLOPTTYPE_LONG + 278
+
+Rem
+bbdoc:  DNS-over-HTTPS URL 
+End Rem
+Const CURLOPT_DOH_URL:Int = CURLOPTTYPE_STRINGPOINT + 279
+
+Rem
+bbdoc:  Preferred buffer size to use for uploads 
+End Rem
+Const CURLOPT_UPLOAD_BUFFERSIZE:Int = CURLOPTTYPE_LONG + 280
+
+Rem
+bbdoc:  Time in ms between connection upkeep calls for long-lived connections. 
+End Rem
+Const CURLOPT_UPKEEP_INTERVAL_MS:Int = CURLOPTTYPE_LONG + 281
+
+Rem
+bbdoc:  Specify URL using CURL URL API. 
+End Rem
+Const CURLOPT_CURLU:Int = CURLOPTTYPE_OBJECTPOINT + 282
+
+Rem
+bbdoc:  add trailing data just after no more data is available 
+End Rem
+Const CURLOPT_TRAILERFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 283
+
+Rem
+bbdoc:  pointer to be passed to HTTP_TRAILER_FUNCTION 
+End Rem
+Const CURLOPT_TRAILERDATA:Int = CURLOPTTYPE_CBPOINT + 284
+
+Rem
+bbdoc:  set this to 1L to allow HTTP/0.9 responses or 0L to disallow 
+End Rem
+Const CURLOPT_HTTP09_ALLOWED:Int = CURLOPTTYPE_LONG + 285
+
+Rem
+bbdoc:  alt-svc control bitmask 
+End Rem
+Const CURLOPT_ALTSVC_CTRL:Int = CURLOPTTYPE_LONG + 286
+
+Rem
+bbdoc:  alt-svc cache file name to possibly read from/write to 
+End Rem
+Const CURLOPT_ALTSVC:Int = CURLOPTTYPE_STRINGPOINT + 287
+
+Rem
+bbdoc:  maximum age (idle time) of a connection to consider it for reuse (in seconds) 
+End Rem
+Const CURLOPT_MAXAGE_CONN:Int = CURLOPTTYPE_LONG + 288
+
+Rem
+bbdoc:  SASL authorisation identity 
+End Rem
+Const CURLOPT_SASL_AUTHZID:Int = CURLOPTTYPE_STRINGPOINT + 289
+
+Rem
+bbdoc:  allow RCPT TO command to fail for some recipients 
+End Rem
+Const CURLOPT_MAIL_RCPT_ALLLOWFAILS:Int = CURLOPTTYPE_LONG + 290
+
+Rem
+bbdoc:  the private SSL-certificate as a "blob" 
+End Rem
+Const CURLOPT_SSLCERT_BLOB:Int = CURLOPTTYPE_BLOB + 291
+Const CURLOPT_SSLKEY_BLOB:Int = CURLOPTTYPE_BLOB + 292
+Const CURLOPT_PROXY_SSLCERT_BLOB:Int = CURLOPTTYPE_BLOB + 293
+Const CURLOPT_PROXY_SSLKEY_BLOB:Int = CURLOPTTYPE_BLOB + 294
+Const CURLOPT_ISSUERCERT_BLOB:Int = CURLOPTTYPE_BLOB + 295
+
+Rem
+bbdoc:  Issuer certificate for proxy 
+End Rem
+Const CURLOPT_PROXY_ISSUERCERT:Int = CURLOPTTYPE_STRINGPOINT + 296
+Const CURLOPT_PROXY_ISSUERCERT_BLOB:Int = CURLOPTTYPE_BLOB + 297
+
+Rem
+bbdoc: the EC curves requested by the TLS client (RFC 8422, 5.1);
+about: OpenSSL support via 'set_groups'/'set_curves':
+https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set1_groups.html
+End Rem
+Const CURLOPT_SSL_EC_CURVES:Int = CURLOPTTYPE_STRINGPOINT + 298
+
+Rem
+bbdoc:  HSTS bitmask 
+End Rem
+Const CURLOPT_HSTS_CTRL:Int = CURLOPTTYPE_LONG + 299
+Rem
+bbdoc:  HSTS file name 
+End Rem
+Const CURLOPT_HSTS:Int = CURLOPTTYPE_STRINGPOINT + 300
+
+Rem
+bbdoc:  HSTS read callback 
+End Rem
+Const CURLOPT_HSTSREADFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 301
+Const CURLOPT_HSTSREADDATA:Int = CURLOPTTYPE_CBPOINT + 302
+
+Rem
+bbdoc:  HSTS write callback 
+End Rem
+Const CURLOPT_HSTSWRITEFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 303
+Const CURLOPT_HSTSWRITEDATA:Int = CURLOPTTYPE_CBPOINT + 304
+
+Rem
+bbdoc:  Parameters for V4 signature 
+End Rem
+Const CURLOPT_AWS_SIGV4:Int = CURLOPTTYPE_STRINGPOINT + 305
+
+Rem
+bbdoc:  Same as CURLOPT_SSL_VERIFYPEER but for DoH (DNS-over-HTTPS) servers. 
+End Rem
+Const CURLOPT_DOH_SSL_VERIFYPEER:Int = CURLOPTTYPE_LONG + 306
+
+Rem
+bbdoc:  Same as CURLOPT_SSL_VERIFYHOST but for DoH (DNS-over-HTTPS) servers. 
+End Rem
+Const CURLOPT_DOH_SSL_VERIFYHOST:Int = CURLOPTTYPE_LONG + 307
+
+Rem
+bbdoc:  Same as CURLOPT_SSL_VERIFYSTATUS but for DoH (DNS-over-HTTPS) servers. 
+End Rem
+Const CURLOPT_DOH_SSL_VERIFYSTATUS:Int = CURLOPTTYPE_LONG + 308
+
+Rem
+bbdoc:  The CA certificates as "blob" used to validate the peer certificate this option is used only if SSL_VERIFYPEER is true 
+End Rem
+Const CURLOPT_CAINFO_BLOB:Int = CURLOPTTYPE_BLOB + 309
+
+Rem
+bbdoc:  The CA certificates as "blob" used to validate the proxy certificate this option is used only if PROXY_SSL_VERIFYPEER is true 
+End Rem
+Const CURLOPT_PROXY_CAINFO_BLOB:Int = CURLOPTTYPE_BLOB + 310
+
+Rem
+bbdoc:  used by scp/sftp to verify the host's public key 
+End Rem
+Const CURLOPT_SSH_HOST_PUBLIC_KEY_SHA256:Int = CURLOPTTYPE_STRINGPOINT + 311
+
+Rem
+bbdoc:  Function that will be called immediately before the initial request is made on a connection (after any protocol negotiation step).  
+End Rem
+Const CURLOPT_PREREQFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 312
+
+Rem
+bbdoc:  Data passed to the CURLOPT_PREREQFUNCTION callback 
+End Rem
+Const CURLOPT_PREREQDATA:Int = CURLOPTTYPE_CBPOINT + 313
+
+Rem
+bbdoc:  maximum age (since creation) of a connection to consider it for reuse (in seconds) 
+End Rem
+Const CURLOPT_MAXLIFETIME_CONN:Int = CURLOPTTYPE_LONG + 314
 
 Rem
 bbdoc: No authentication
@@ -2466,6 +2661,17 @@ Const CURLINFO_HTTP_VERSION:Int = CURLINFO_LONG + 46
 Const CURLINFO_PROXY_SSL_VERIFYRESULT:Int = CURLINFO_LONG + 47
 Const CURLINFO_PROTOCOL:Int = CURLINFO_LONG + 48
 Const CURLINFO_SCHEME:Int = CURLINFO_STRING + 49
+Const CURLINFO_TOTAL_TIME_T:Int = CURLINFO_OFF_T + 50
+Const CURLINFO_NAMELOOKUP_TIME_T:Int = CURLINFO_OFF_T + 51
+Const CURLINFO_CONNECT_TIME_T:Int = CURLINFO_OFF_T + 52
+Const CURLINFO_PRETRANSFER_TIME_T:Int = CURLINFO_OFF_T + 53
+Const CURLINFO_STARTTRANSFER_TIME_T:Int = CURLINFO_OFF_T + 54
+Const CURLINFO_REDIRECT_TIME_T:Int = CURLINFO_OFF_T + 55
+Const CURLINFO_APPCONNECT_TIME_T:Int = CURLINFO_OFF_T + 56
+Const CURLINFO_RETRY_AFTER:Int = CURLINFO_OFF_T + 57
+Const CURLINFO_EFFECTIVE_METHOD:Int = CURLINFO_STRING + 58
+Const CURLINFO_PROXY_ERROR:Int = CURLINFO_LONG + 59
+Const CURLINFO_REFERER:Int = CURLINFO_STRING + 60
 
 Const CURLCLOSEPOLICY_NONE:Int = 0 ' first, never use this
 Const CURLCLOSEPOLICY_OLDEST:Int = 1

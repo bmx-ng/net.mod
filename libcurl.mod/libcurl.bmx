@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2021 Bruce A Henderson
+' Copyright (c) 2007-2022 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -25,14 +25,16 @@ bbdoc: libcurl with SSL
 End Rem
 Module Net.libcurl
 
-ModuleInfo "Version: 1.07"
+ModuleInfo "Version: 1.08"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: MIT"
 ModuleInfo "Copyright: (libcurl) 1996 - 2021, Daniel Stenberg"
 ModuleInfo "Copyright: (c-ares) 1998 Massachusetts Institute of Technology, 2004 - 2021 by Daniel Stenberg et al"
-ModuleInfo "Copyright: (Wrapper) 2007-2021 Bruce A Henderson"
+ModuleInfo "Copyright: (Wrapper) 2007-2022 Bruce A Henderson"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.08"
+ModuleInfo "History: Refactored glue."
 ModuleInfo "History: 1.07"
 ModuleInfo "History: Update to libcurl 7.80.0"
 ModuleInfo "History: Update to c-ares 1.18.1"
