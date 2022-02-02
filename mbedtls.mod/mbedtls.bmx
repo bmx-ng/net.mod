@@ -1,5 +1,5 @@
 ' 
-' Copyright 2018-2021 Bruce A Henderson
+' Copyright 2018-2022 Bruce A Henderson
 ' 
 ' Licensed under the Apache License, Version 2.0 (the "License");
 ' you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ bbdoc: mbed TLS SSL library.
 End Rem
 Module Net.mbedtls
 
-ModuleInfo "Version: 1.05"
+ModuleInfo "Version: 1.06"
 ModuleInfo "License: Apache 2.0"
-ModuleInfo "Copyright: Wrapper - 2018-2021 Bruce A Henderson"
+ModuleInfo "Copyright: Wrapper - 2018-2022 Bruce A Henderson"
 
+ModuleInfo "History: 1.06"
+ModuleInfo "History: Split crypto functions into net.mbedtlscrypto"
 ModuleInfo "History: 1.05"
 ModuleInfo "History: Update to mbedtls 3.0.0.74217ee"
 ModuleInfo "History: 1.04"

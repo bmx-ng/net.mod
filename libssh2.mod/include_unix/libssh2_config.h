@@ -50,7 +50,9 @@
 /* #undef HAVE_LIBGCRYPT */
 
 /* Define if you have the ssl library. */
-#define HAVE_LIBSSL 1
+/* #undef HAVE_LIBSSL */
+
+#define LIBSSH2_MBEDTLS 1
 
 //#define HAVE_BCRYPT_PBKDF 1
 

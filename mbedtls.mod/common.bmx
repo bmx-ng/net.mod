@@ -1,5 +1,5 @@
 ' 
-' Copyright 2018-2021 Bruce A Henderson
+' Copyright 2018-2022 Bruce A Henderson
 ' 
 ' Licensed under the Apache License, Version 2.0 (the "License");
 ' you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
 ' limitations under the License.
 ' 
 SuperStrict
+
+Import Net.mbedtlscrypto
 
 ?win32
 Import "-lws2_32"
