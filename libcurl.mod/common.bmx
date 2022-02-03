@@ -28,7 +28,6 @@ Import "consts.bmx"
 
 ?linux
 Import "-ldl"
-Import "-lidn"
 ?win32
 Import "-ladvapi32"
 Import "-lws2_32"

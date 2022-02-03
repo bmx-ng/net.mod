@@ -25,7 +25,7 @@ bbdoc: libcurl with SSL
 End Rem
 Module Net.libcurl
 
-ModuleInfo "Version: 1.08"
+ModuleInfo "Version: 1.09"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: MIT"
 ModuleInfo "Copyright: (libcurl) 1996 - 2021, Daniel Stenberg"
@@ -33,6 +33,8 @@ ModuleInfo "Copyright: (c-ares) 1998 Massachusetts Institute of Technology, 2004
 ModuleInfo "Copyright: (Wrapper) 2007-2022 Bruce A Henderson"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.09"
+ModuleInfo "History: Linux build fixes."
 ModuleInfo "History: 1.08"
 ModuleInfo "History: Refactored glue."
 ModuleInfo "History: 1.07"

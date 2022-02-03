@@ -1,4 +1,4 @@
-' Copyright (c) 2009-2021 Bruce A Henderson
+' Copyright (c) 2009-2022 Bruce A Henderson
 ' All rights reserved.
 '
 ' Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,13 @@ bbdoc: Libssh2
 End Rem
 Module Net.libssh2
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "License: BSD"
-ModuleInfo "Copyright: Wrapper - 2009-2021 Bruce A Henderson"
+ModuleInfo "Copyright: Wrapper - 2009-2022 Bruce A Henderson"
 
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Linux build fixes."
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Update to libssh2 1.10.0"
 ModuleInfo "History: Patched to support mbedtls 3.x"
