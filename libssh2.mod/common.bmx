@@ -1,4 +1,4 @@
-' Copyright (c) 2009-2021 Bruce A Henderson
+' Copyright (c) 2009-2022 Bruce A Henderson
 ' All rights reserved.
 '
 ' Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,6 @@ SuperStrict
 
 ?linux
 Import "-ldl"
-Import "-lidn"
 ?win32
 Import "-ladvapi32"
 ?
