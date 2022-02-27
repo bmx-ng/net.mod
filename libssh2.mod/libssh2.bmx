@@ -96,7 +96,7 @@ Type TSSHSession
 	returns: 0 on success, negative on failure. 
 	End Rem
 	Method Startup:Int(socket:TSocket)
-		Return bmx_libssh2_session_startup(sessionPtr, socket._socket)
+		Return bmx_libssh2_session_handshake(sessionPtr, socket._socket)
 	End Method
 
 	Rem

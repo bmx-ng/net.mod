@@ -36,7 +36,13 @@ Import "source.bmx"
 Extern
 
 	Function bmx_libssh2_session_create:Byte Ptr(handle:Object)
-	Function bmx_libssh2_session_startup:Int(handle:Byte Ptr, socket:Int)
+	?not win32
+	Function bmx_libssh2_session_handshake:Int(handle:Byte Ptr, socket:Int)
+	?win32 and ptr32
+	Function bmx_libssh2_session_handshake:Int(handle:Byte Ptr, socket:Int)
+	?win32 and ptr64
+	Function bmx_libssh2_session_handshake:Int(handle:Byte Ptr, socket:Long)
+	?
 	Function bmx_libssh2_session_free:Int(handle:Byte Ptr)
 	Function bmx_libssh2_session_disconnect:Int(handle:Byte Ptr, description:String)
 

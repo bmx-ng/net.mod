@@ -43,7 +43,7 @@ extern "C" {
 	int bmx_libssh2_session_disconnect(MaxSSHSession * session, BBString * description);
 
 	MaxSSHSession * bmx_libssh2_session_create(BBObject * handle);
-	int bmx_libssh2_session_startup(MaxSSHSession * session, int socket);
+	int bmx_libssh2_session_handshake(MaxSSHSession * session, libssh2_socket_t socket);
 	int bmx_libssh2_session_free(MaxSSHSession * session);
 
 	LIBSSH2_CHANNEL * bmx_libssh2_channel_open(MaxSSHSession * session);
@@ -149,8 +149,8 @@ MaxSSHSession * bmx_libssh2_session_create(BBObject * handle) {
 	return new MaxSSHSession(handle);
 }
 
-int bmx_libssh2_session_startup(MaxSSHSession * session, int socket) {
-	return libssh2_session_startup(session->Session(), socket);
+int bmx_libssh2_session_handshake(MaxSSHSession * session, libssh2_socket_t socket) {
+	return libssh2_session_handshake(session->Session(), socket);
 }
 
 int bmx_libssh2_session_free(MaxSSHSession * session) {
@@ -158,7 +158,7 @@ int bmx_libssh2_session_free(MaxSSHSession * session) {
 }
 
 int bmx_libssh2_userauth_keyboard_interactive(MaxSSHSession * session, BBString * username) {
-	char *p = (char*)bbStringToCString( username );
+	char *p = (char*)bbStringToUTF8String( username );
 
 	int ret = libssh2_userauth_keyboard_interactive(session->Session(), p, &_interactive_callback);
 
@@ -171,15 +171,15 @@ LIBSSH2_CHANNEL * bmx_libssh2_channel_open(MaxSSHSession * session) {
 }
 
 int bmx_libssh2_session_disconnect(MaxSSHSession * session, BBString * description) {
-	char *d = (char*)bbStringToCString( description );
+	char *d = (char*)bbStringToUTF8String( description );
 	int ret = libssh2_session_disconnect(session->Session(), d);
 	bbMemFree( d );
 	return ret;
 }
 
 int bmx_libssh2_userauth_password(MaxSSHSession * session, BBString * username, BBString * password) {
-	char *u = (char*)bbStringToCString( username );
-	char *p = (char*)bbStringToCString( password );
+	char *u = (char*)bbStringToUTF8String( username );
+	char *p = (char*)bbStringToUTF8String( password );
 
 	int ret = libssh2_userauth_password(session->Session(), u, p);
 
@@ -205,7 +205,7 @@ int bmx_libssh2_kbdint_prompt_echo(LIBSSH2_USERAUTH_KBDINT_PROMPT * prompt) {
 // ***************************************************
 
 void bmx_libssh2_kbdint_response_settext(LIBSSH2_USERAUTH_KBDINT_RESPONSE * response, BBString * text) {
-	char *p = (char*)bbStringToCString( text );
+	char *p = (char*)bbStringToUTF8String( text );
 	response->text = strdup(p);
 	response->length = strlen(p);
 	bbMemFree( p );
@@ -215,8 +215,8 @@ void bmx_libssh2_kbdint_response_settext(LIBSSH2_USERAUTH_KBDINT_RESPONSE * resp
 // ***************************************************
 
 int bmx_libssh2_channel_setenv(LIBSSH2_CHANNEL * channel, BBString * name, BBString * value) {
-	char *n = (char*)bbStringToCString( name );
-	char *v = (char*)bbStringToCString( value );
+	char *n = (char*)bbStringToUTF8String( name );
+	char *v = (char*)bbStringToUTF8String( value );
 	int ret = libssh2_channel_setenv(channel, n, v);
 	bbMemFree(n);
 	bbMemFree(v);
@@ -249,8 +249,8 @@ int bmx_libssh2_channel_subsystem(LIBSSH2_CHANNEL * channel, BBString * message)
 }
 
 int bmx_libssh2_channel_processstartup(LIBSSH2_CHANNEL * channel, BBString * request, BBString * message) {
-	char *r = (char*)bbStringToCString( request );
-	char *m = (char*)bbStringToCString( message );
+	char *r = (char*)bbStringToUTF8String( request );
+	char *m = (char*)bbStringToUTF8String( message );
 	int ret = libssh2_channel_process_startup(channel, r, strlen(r), m, strlen(m));
 	bbMemFree(r);
 	bbMemFree(m);
@@ -309,10 +309,10 @@ LIBSSH2_CHANNEL * bmx_libssh2_channel_directtcpip(MaxSSHSession * session, BBStr
 
 	LIBSSH2_CHANNEL * channel;
 	
-	char *h = (char*)bbStringToCString( host );
+	char *h = (char*)bbStringToUTF8String( host );
 	char * sh = 0;
 	if (shost != &bbEmptyString) {
-		sh = (char*)bbStringToCString( shost );
+		sh = (char*)bbStringToUTF8String( shost );
 	}
 	
 	if (sh) {
