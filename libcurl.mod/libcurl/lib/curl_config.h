@@ -1002,10 +1002,14 @@
 /* #undef USE_RUSTLS */
 
 /* to enable Windows native SSL/TLS support */
-/* #undef USE_SCHANNEL */
+#ifdef _WIN32
+#define USE_SCHANNEL 1
+#endif
 
 /* enable Secure Transport */
-/* #undef USE_SECTRANSP */
+#ifdef __APPLE__
+#define USE_SECTRANSP 1
+#endif
 
 /* if you want POSIX threaded DNS lookup */
 #define USE_THREADS_POSIX 1
