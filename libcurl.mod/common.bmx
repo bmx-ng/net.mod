@@ -81,6 +81,7 @@ Extern
 	Function bmx_curl_easy_getinfo_double:Int(handle:Byte Ptr, option:Int, value:Double Ptr)
 	Function bmx_curl_easy_getinfo_obj:Object(handle:Byte Ptr, option:Int, error:Int Ptr)
 	Function bmx_curl_easy_getinfo_slist:Int(handle:Byte Ptr, option:Int, slist:SCurlSlist Ptr)
+	Function bmx_curl_easy_getinfo_long:Int(handle:Byte Ptr, option:Int, value:Long Ptr)
 	
 	Function bmx_curl_multiselect:Int(handle:Byte Ptr, timeout:Double)
 	

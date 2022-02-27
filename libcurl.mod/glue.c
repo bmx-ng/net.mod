@@ -95,6 +95,10 @@ CURLcode bmx_curl_easy_getinfo_double(CURL *curl, CURLINFO info, double * value)
 	return curl_easy_getinfo(curl, info, value);
 }
 
+CURLcode bmx_curl_easy_getinfo_long(CURL *curl, CURLINFO info, BBInt64 * value) {
+	return curl_easy_getinfo(curl, info, value);
+}
+
 char * bmx_curl_easy_getinfo_obj(CURL * curl, CURLINFO info, CURLcode * error) {
 	char * priv = NULL;
 	*error = curl_easy_getinfo(curl, info, priv);

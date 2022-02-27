@@ -944,7 +944,27 @@ Type TCurlInfo
 	
 		Return this
 	End Function
-	
+
+?not win32
+	Method activeSocket:Int()
+		Local value:Int		
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_ACTIVESOCKET, Varptr value)
+		Return value
+	End Method
+?win32 and ptr32
+	Method activeSocket:Int()
+		Local value:Int		
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_ACTIVESOCKET, Varptr value)
+		Return value
+	End Method
+?win32 and ptr64
+	Method activeSocket:Long()
+		Local value:Long		
+		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_ACTIVESOCKET, Varptr value)
+		Return value
+	End Method
+?
+
 	Rem
 	bbdoc: The last used effective URL.
 	End Rem
