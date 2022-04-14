@@ -18,6 +18,7 @@ SuperStrict
 Import "../mbedtls.mod/mbedtls/include/*.h"
 
 Import "../mbedtls.mod/mbedtls/library/aes.c"
+Import "../mbedtls.mod/mbedtls/library/aesni.c"
 Import "../mbedtls.mod/mbedtls/library/aria.c"
 Import "../mbedtls.mod/mbedtls/library/asn1parse.c"
 Import "../mbedtls.mod/mbedtls/library/bignum.c"

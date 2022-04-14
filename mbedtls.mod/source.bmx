@@ -17,7 +17,6 @@ SuperStrict
 
 Import "mbedtls/include/*.h"
 
-Import "mbedtls/library/aesni.c"
 Import "mbedtls/library/asn1write.c"
 Import "mbedtls/library/base64.c"
 Import "mbedtls/library/ctr_drbg.c"
