@@ -188,13 +188,15 @@ Type TNetContext
 	Method Free()
 		If contextPtr Then
 			bmx_mbedtls_net_free(contextPtr)
-			bmx_mbedtls_net_delete(contextPtr)
-			contextPtr = Null
 		End If
 	End Method
 	
 	Method Delete()
 		Free()
+		If contextPtr Then
+			bmx_mbedtls_net_delete(contextPtr)
+			contextPtr = Null
+		End If
 	End Method
 	
 End Type
