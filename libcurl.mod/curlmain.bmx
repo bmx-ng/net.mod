@@ -999,7 +999,7 @@ Type TCurlInfo
 	Method httpConnectCode:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_FILETIME, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_HTTP_CONNECTCODE, Varptr value)
 		
 		Return value
 	End Method
@@ -1014,7 +1014,7 @@ Type TCurlInfo
 	Method FileTime:Int()
 		Local value:Int
 		
-		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_HTTPAUTH_AVAIL, Varptr value)
+		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_FILETIME, Varptr value)
 		
 		Return value
 	End Method
