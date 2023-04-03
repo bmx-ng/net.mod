@@ -1011,10 +1011,10 @@ Type TCurlInfo
 	tell the server to collect this information before the transfer is made, by using the #CURLOPT_FILETIME option
 	to #setOptInt or you will unconditionally get a -1 back.
 	End Rem
-	Method FileTime:Int()
-		Local value:Int
+	Method FileTime:Long()
+		Local value:Long
 		
-		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_FILETIME, Varptr value)
+		error = bmx_curl_easy_getinfo_long(easyHandlePtr, CURLINFO_FILETIME, Varptr value)
 		
 		Return value
 	End Method
