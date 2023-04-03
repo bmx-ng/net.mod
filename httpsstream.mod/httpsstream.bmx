@@ -28,6 +28,7 @@ ModuleInfo "History: 1.00 Initial Release"
 
 Import Net.Libcurl
 
+Import "../libcurl.mod/libcurl/include/*.h"
 Import "glue.c"
 
 Type THTTPSStreamFactory Extends TStreamFactory
