@@ -26,6 +26,8 @@ ModuleInfo "Copyright: 2023 Bruce A Henderson"
 
 ModuleInfo "History: 1.00 Initial Release"
 
+ModuleInfo "CC_OPTS: -DCURL_STATICLIB -DCARES_STATICLIB -DCURL_STRICTER -DUSE_MBEDTLS"
+
 Import Net.Libcurl
 
 Import "../libcurl.mod/libcurl/include/*.h"
