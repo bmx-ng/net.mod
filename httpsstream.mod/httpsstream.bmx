@@ -48,7 +48,9 @@ Type THTTPSStreamFactory Extends TStreamFactory
 			
 			Local curl:TCurlEasy = TCurlEasy.Create()
 			curl.setOptString(CURLOPT_URL, "https://" + path)
-
+			curl.setOptInt(CURLOPT_SSL_VERIFYHOST, False)
+			curl.setOptInt(CURLOPT_SSL_VERIFYPEER, False)
+			
 			Return New TCurlStream(curl)
 		EndIf
 	End Method
@@ -59,10 +61,10 @@ Type TCurlStream Extends TStream
 
 	Field curl:TCurlEasy
 	Field curlReaderPtr:Byte Ptr
-	FIeld isEOF:Int
+	Field isEOF:Int
 
 	Method New(curl:TCurlEasy)
-		self.curl = curl
+		Self.curl = curl
 		curlReaderPtr = bmx_hstream_curl_reader_init(curl.easyHandlePtr)
 	End Method
 
@@ -70,7 +72,7 @@ Type TCurlStream Extends TStream
 		Local c:Int = bmx_hstream_read_from_curl(curlReaderPtr, buf, Size_T(count))
 		If c = 0 Then
 			isEOF = True
-		End IF
+		End If
 		Return c
 	End Method
 
