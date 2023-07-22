@@ -1,5 +1,5 @@
 ' 
-' Copyright 2018-2022 Bruce A Henderson
+' Copyright 2018-2023 Bruce A Henderson
 ' 
 ' Licensed under the Apache License, Version 2.0 (the "License");
 ' you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ Import "../mbedtls.mod/mbedtls/library/nist_kw.c"
 Import "../mbedtls.mod/mbedtls/library/oid.c"
 Import "../mbedtls.mod/mbedtls/library/padlock.c"
 Import "../mbedtls.mod/mbedtls/library/pkcs5.c"
+Import "../mbedtls.mod/mbedtls/library/platform.c"
 Import "../mbedtls.mod/mbedtls/library/platform_util.c"
 Import "../mbedtls.mod/mbedtls/library/poly1305.c"
 Import "../mbedtls.mod/mbedtls/library/ripemd160.c"
