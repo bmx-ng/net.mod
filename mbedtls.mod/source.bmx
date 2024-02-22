@@ -1,5 +1,5 @@
 ' 
-' Copyright 2018-2022 Bruce A Henderson
+' Copyright 2018-2023 Bruce A Henderson
 ' 
 ' Licensed under the Apache License, Version 2.0 (the "License");
 ' you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ Import "mbedtls/library/pk_wrap.c"
 Import "mbedtls/library/pkcs12.c"
 Import "mbedtls/library/pkparse.c"
 Import "mbedtls/library/pkwrite.c"
-Import "mbedtls/library/platform.c"
 Import "mbedtls/library/rsa.c"
 Import "mbedtls/library/rsa_alt_helpers.c"
 Import "mbedtls/library/ssl_ciphersuites.c"
