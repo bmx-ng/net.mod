@@ -178,6 +178,7 @@ Type TCurlEasy Extends TCurlHasLists
 				Local str:Byte Ptr = parameter.toUTF8String()
 				Local res:Int bmx_curl_easy_setopt_str(easyHandlePtr, option, str)
 				MemFree(str)
+				Return res
 			Else
 				Return bmx_curl_easy_setopt_ptr(easyHandlePtr, option, Null)
 			End If
