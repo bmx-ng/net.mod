@@ -101,9 +101,6 @@ Type TCurlEasy Extends TCurlHasLists
 
 	Field easyHandlePtr:Byte Ptr
 	
-	' keeps strings alive for as long as we need them...
-	Field stringMap:TMap = New TMap
-	
 	' the transfer data as a string...
 	Field data:String
 	
@@ -177,27 +174,11 @@ Type TCurlEasy Extends TCurlHasLists
 	End Rem
 	Method setOptString:Int(option:Int, parameter:String)
 		If easyHandlePtr Then
-			' strings need to be alive for as long as libcurl needs them... so we cache them.
-			
-			Local s:Byte Ptr
-			Local opt:TCurlInt = TCurlInt(stringMap.ValueForKey(String(option)))
-			
-			If opt Then
-				' done with this one... free it up.
-				If opt.s Then
-					MemFree(opt.s)
-				End If
+			If parameter
+				Local str:Byte Ptr = parameter.toUTF8String()
+				Local res:Int bmx_curl_easy_setopt_str(easyHandlePtr, option, str)
+				MemFree(str)
 			Else
-				opt = New TCurlInt
-				opt.opt = option
-				stringMap.insert(String(option), opt)
-			End If
-		
-			If parameter Then
-				opt.s = parameter.toUTF8String()
-				Return bmx_curl_easy_setopt_str(easyHandlePtr, option, opt.s)
-			Else
-				opt.s = Null
 				Return bmx_curl_easy_setopt_ptr(easyHandlePtr, option, Null)
 			End If
 		End If
@@ -236,14 +217,6 @@ Type TCurlEasy Extends TCurlHasLists
 		
 		' free up the slists
 		freeLists()
-
-		' cleanup strings
-		For Local i:TCurlInt = EachIn stringMap.values()
-		
-			MemFree(i.s)
-		
-		Next
-		stringMap.clear()
 		
 		' cleanup callbacks and related data
 		dbData = Null
@@ -769,18 +742,6 @@ Type TCurlEasy Extends TCurlHasLists
 		End If
 	End Method
 	
-End Type
-
-' internal :-)
-Type TCurlInt
-	Field opt:Int
-	Field s:Byte Ptr
-	Function set:TCurlInt(opt:Int, s:Byte Ptr)
-		Local this:TCurlInt = New TCurlInt
-		this.opt = opt
-		this.s = s
-		Return this
-	End Function
 End Type
 
 Rem
