@@ -20,7 +20,6 @@
 
 SuperStrict
 
-Import BRL.Map
 Import BRL.Stream
 Import BRL.LinkedList
 
