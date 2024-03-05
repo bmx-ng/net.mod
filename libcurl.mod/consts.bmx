@@ -192,6 +192,9 @@ header with #httpHeader as usual.
 <p>
 To make multipart/formdata posts (aka rfc1867-posts), check out the #CURLOPT_HTTPPOST option. 
 </p>
+<p>
+<span style="color:red">Note:</span> only use with #setOptBytePtr as this option requires you to manually free the memory. Use #CURLOPT_COPYPOSTFIELDS with #setOptString for simplicity.
+</p>
 End Rem
 Const CURLOPT_POSTFIELDS:Int = CURLOPTTYPE_OBJECTPOINT + 15
 
