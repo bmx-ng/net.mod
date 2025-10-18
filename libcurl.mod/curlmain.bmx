@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2022 Bruce A Henderson
+' Copyright (c) 2007-2025 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -320,7 +320,7 @@ Type TCurlEasy Extends TCurlHasLists
 	End Method
 
 	
-	Function writeStreamCallback:Int(buffer:Byte Ptr, size:Int, nmemb:Int, stream:Object)
+	Function writeStreamCallback:Size_T(buffer:Byte Ptr, size:Size_T, nmemb:Size_T, stream:Object)
 		Return TStream(stream).writeBytes(buffer, size * nmemb)
 	End Function
 
@@ -336,7 +336,7 @@ Type TCurlEasy Extends TCurlHasLists
 	</p>
 	<p>Setting this will override a previous call to #setWriteStream or #setWriteString.</p>
 	End Rem
-	Method setWriteCallback(writeFunction:Int(buffer:Byte Ptr, size:Int, data:Object), data:Object = Null)
+	Method setWriteCallback(writeFunction:Size_T(buffer:Byte Ptr, size:Size_T, data:Object), data:Object = Null)
 		If easyHandlePtr Then
 		
 			wrFunction = writeFunction
@@ -349,9 +349,9 @@ Type TCurlEasy Extends TCurlHasLists
 
 	' +++++
 	Field wrData:Object
-	Field wrFunction:Int(buffer:Byte Ptr, size:Int, data:Object)
+	Field wrFunction:Size_T(buffer:Byte Ptr, size:Size_T, data:Object)
 
-	Function wrCallback:Int(buffer:Byte Ptr, size:Int, nmemb:Int, data:Object)
+	Function wrCallback:Size_T(buffer:Byte Ptr, size:Size_T, nmemb:Size_T, data:Object)
 
 		Return TCurlEasy(data).wrFunction(buffer, size * nmemb, TCurlEasy(data).wrData)
 		
@@ -368,8 +368,8 @@ Type TCurlEasy Extends TCurlHasLists
 		setWriteCallback(writeStringFunction, Self)
 	End Method
 	
-	Function writeStringFunction:Int(buffer:Byte Ptr, size:Int, curl:Object)
-		TCurlEasy(curl).data:+ String.FromBytes( buffer, size )
+	Function writeStringFunction:Size_T(buffer:Byte Ptr, size:Size_T, curl:Object)
+		TCurlEasy(curl).data:+ String.FromBytes( buffer, Int(size) )
 		Return size
 	End Function
 	
@@ -386,7 +386,7 @@ Type TCurlEasy Extends TCurlHasLists
 		End If		
 	End Method
 
-	Function readStreamCallback:Int(buffer:Byte Ptr, size:Int, nmemb:Int, stream:Object)
+	Function readStreamCallback:Size_T(buffer:Byte Ptr, size:Size_T, nmemb:Size_T, stream:Object)
 		Try
 			Return TStream(stream).read(buffer, size * nmemb)
 		Catch e:TStreamReadException
@@ -411,7 +411,7 @@ Type TCurlEasy Extends TCurlHasLists
 	</p>
 	<p>Setting this will override a previous call to #setReadStream.</p>
 	End Rem
-	Method setReadCallback(readFunction:Int(buffer:Byte Ptr, size:Int, data:Object), data:Object = Null)
+	Method setReadCallback(readFunction:Size_T(buffer:Byte Ptr, size:Size_T, data:Object), data:Object = Null)
 		If easyHandlePtr Then
 		
 			rdFunction = readFunction
@@ -424,9 +424,9 @@ Type TCurlEasy Extends TCurlHasLists
 
 	' +++++
 	Field rdData:Object
-	Field rdFunction:Int(buffer:Byte Ptr, size:Int, data:Object)
+	Field rdFunction:Size_T(buffer:Byte Ptr, size:Size_T, data:Object)
 
-	Function rdCallback:Int(buffer:Byte Ptr, size:Int, nmemb:Int, data:Object)
+	Function rdCallback:Size_T(buffer:Byte Ptr, size:Size_T, nmemb:Size_T, data:Object)
 
 		Return TCurlEasy(data).rdFunction(buffer, size * nmemb, TCurlEasy(data).rdData)
 		
@@ -434,12 +434,16 @@ Type TCurlEasy Extends TCurlHasLists
 
 	Rem
 	bbdoc: Sets up a callback for header data (incoming).
-	about: This function gets called by libcurl as soon as it has received header data. The header
-	callback will be called once for each header and only complete header lines are passed on to the
-	callback. Parsing headers should be easy enough using this. The size of the data pointed to by buffed
-	is @size bytes. Do not assume that the header line is zero terminated! The callback function must
-	return the number of bytes actually taken care of, or return -1 to signal error to the library
-	(it will cause it to abort the transfer with a #CURLE_WRITE_ERROR return code).
+	about: This callback function gets invoked by libcurl as soon as it has received header data.
+	The header callback is called once for each header and only complete header lines are passed on to the callback.
+	Parsing headers is easy to do using this callback. buffer points to the delivered data, and the size of that data
+	is @nitems; size is always 1. The provided header line is not null-terminated. Do not modify the passed in buffer.
+	Your callback should return the number of bytes actually taken care of. If that amount differs from the amount
+	passed to your callback function, it signals an error condition to the library. This causes the transfer
+	to get aborted and the libcurl function used returns #CURLE_WRITE_ERROR.
+	You can also abort the transfer by returning #CURL_WRITEFUNC_ERROR
+
+
 	<p>
 	When a server sends a chunked encoded transfer, it may contain a trailer. That trailer is identical
 	to a HTTP header and if such a trailer is received it is passed to the application using this
@@ -451,22 +455,22 @@ Type TCurlEasy Extends TCurlHasLists
 	</ol>
 	</p>
 	End Rem
-	Method setHeaderCallback(headerFunction:Int(buffer:Byte Ptr, size:Int, data:Object), data:Object = Null)
+	Method setHeaderCallback(headerFunction:Size_T(buffer:Byte Ptr, size:Size_T, data:Object), data:Object = Null)
 		If easyHandlePtr Then
 		
 			hrFunction = headerFunction
 			hrData = data
 		
 			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_HEADERFUNCTION, hrCallback)
-			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_WRITEHEADER, Self)
+			bmx_curl_easy_setopt_obj(easyHandlePtr, CURLOPT_HEADERDATA, Self)
 		End If
 	End Method
 
 	' +++++
 	Field hrData:Object
-	Field hrFunction:Int(buffer:Byte Ptr, size:Int, data:Object)
+	Field hrFunction:Size_T(buffer:Byte Ptr, size:Size_T, data:Object)
 
-	Function hrCallback:Int(buffer:Byte Ptr, size:Int, nmemb:Int, data:Object)
+	Function hrCallback:Size_T(buffer:Byte Ptr, size:Size_T, nmemb:Size_T, data:Object)
 
 		Return TCurlEasy(data).hrFunction(buffer, size * nmemb, TCurlEasy(data).hrData)
 		
@@ -481,12 +485,12 @@ Type TCurlEasy Extends TCurlHasLists
 	this curl object is cleaned up / deleted.</p>
 	<p>
 	Calling this method automatically sets #CURLOPT_NOBODY to 0.<br>
-	Use this instead of setopt #CURLOPT_HTTPPOST.
+	Use this instead of setopt #CURLOPT_MIMEPOST.
 	</p>
 	End Rem
 	Method httpPost(formData:TCurlFormData)
 		If easyHandlePtr Then
-			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_HTTPPOST, formData.httpPost.post);
+			bmx_curl_easy_setopt_ptr(easyHandlePtr, CURLOPT_MIMEPOST, formData.httpPost.post);
 		End If
 	End Method
 	

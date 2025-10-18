@@ -49,10 +49,10 @@ If this is received, the location following worked
 <server>
 http
 </server>
- <name>
+<name>
 HTTP redirect with credentials using # in user and password
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/want/%TESTNUMBER -L -u "catmai#d:#DZaRJYrixKE*gFY"
 </command>
 </client>
@@ -62,13 +62,13 @@ http://%HOSTIP:%HTTPPORT/want/%TESTNUMBER -L -u "catmai#d:#DZaRJYrixKE*gFY"
 <protocol>
 GET /want/%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
-Authorization: Basic Y2F0bWFpI2Q6I0RaYVJKWXJpeEtFKmdGWQ==
+Authorization: Basic %b64[catmai#d:#DZaRJYrixKE*gFY]b64%
 User-Agent: curl/%VERSION
 Accept: */*
 
 GET /data/%TESTNUMBER0002.txt HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
-Authorization: Basic Y2F0bWFpI2Q6I0RaYVJKWXJpeEtFKmdGWQ==
+Authorization: Basic %b64[catmai#d:#DZaRJYrixKE*gFY]b64%
 User-Agent: curl/%VERSION
 Accept: */*
 

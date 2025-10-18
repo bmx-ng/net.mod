@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2022 Bruce A Henderson
+' Copyright (c) 2007-2025 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -25,14 +25,16 @@ bbdoc: libcurl with SSL
 End Rem
 Module Net.libcurl
 
-ModuleInfo "Version: 1.09"
+ModuleInfo "Version: 1.10"
 ModuleInfo "Author: Bruce A Henderson"
 ModuleInfo "License: MIT"
-ModuleInfo "Copyright: (libcurl) 1996 - 2021, Daniel Stenberg"
+ModuleInfo "Copyright: (libcurl) 1996 - 2025, Daniel Stenberg"
 ModuleInfo "Copyright: (c-ares) 1998 Massachusetts Institute of Technology, 2004 - 2021 by Daniel Stenberg et al"
-ModuleInfo "Copyright: (Wrapper) 2007-2022 Bruce A Henderson"
+ModuleInfo "Copyright: (Wrapper) 2007-2025 Bruce A Henderson"
 ModuleInfo "Modserver: BRL"
 
+ModuleInfo "History: 1.10"
+ModuleInfo "History: Update to libcurl 8.16.0"
 ModuleInfo "History: 1.09"
 ModuleInfo "History: Linux build fixes."
 ModuleInfo "History: 1.08"
@@ -72,7 +74,22 @@ ModuleInfo "CC_OPTS: -DHAVE_CONFIG_H"
 ?win32
 ModuleInfo "CC_OPTS: -DHAVE_GETTIMEOFDAY -DCURL_DISABLE_LDAP"
 ?
-ModuleInfo "CC_OPTS: -DCURL_STATICLIB -DCARES_STATICLIB -DCURL_STRICTER -DUSE_MBEDTLS"
+ModuleInfo "CC_OPTS: -DCURL_STATICLIB -DCARES_STATICLIB -DCURL_STRICTER -DUSE_MBEDTLS -DBUILDING_LIBCURL"
+?macosArm64
+ModuleInfo "CC_OPTS: -DCURL_OS=\~qaarch64-apple-macos\~q"
+?macosX64
+ModuleInfo "CC_OPTS: -DCURL_OS=\~qx86_64-apple-macos\~q"
+?win32x64
+ModuleInfo "CC_OPTS: -DCURL_OS=\~qx86_64-pc-win32\~q"
+?win32arm64
+ModuleInfo "CC_OPTS: -DCURL_OS=\~qaarch64-pc-win32\~q"
+?linuxx64
+ModuleInfo "CC_OPTS: -DCURL_OS=\~qx86_64-pc-linux\~q"
+?linuxArm64
+ModuleInfo "CC_OPTS: -DCURL_OS=\~qaarch64-pc-linux\~q"
+?linuxx86
+ModuleInfo "CC_OPTS: -DCURL_OS=\~qi386-pc-linux\~q"
+?
 
 ' NOTES :
 '

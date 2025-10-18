@@ -46,11 +46,11 @@ OK
 http
 http-proxy
 </server>
- <name>
-Connect to specific host via HTTP proxy (switch to tunnel mode automatically)
- </name>
+<name>
+--connect-to via HTTP proxy (tunnel mode automatically)
+</name>
 
- <command>
+<command>
 http://www.example.com.%TESTNUMBER/%TESTNUMBER --connect-to ::connect.example.com.%TESTNUMBER:%HTTPPORT -x %HOSTIP:%PROXYPORT
 </command>
 <features>

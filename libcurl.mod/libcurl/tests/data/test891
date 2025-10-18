@@ -22,11 +22,12 @@ pop3
 </server>
 <features>
 crypto
+digest
 </features>
- <name>
+<name>
 POP3 with short authentication response
- </name>
- <command>
+</name>
+<command>
 pop3://%HOSTIP:%POP3PORT/%TESTNUMBER -u user:secret
 </command>
 </client>

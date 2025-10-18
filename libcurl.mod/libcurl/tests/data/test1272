@@ -25,11 +25,11 @@ gophers
 <killserver>
 gophers
 </killserver>
- <name>
+<name>
 Gophers index
- </name>
- <command>
--k gophers://%HOSTIP:%GOPHERSPORT/1/%TESTNUMBER
+</name>
+<command>
+--insecure gophers://%HOSTIP:%GOPHERSPORT/1/%TESTNUMBER
 </command>
 </client>
 

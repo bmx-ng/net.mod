@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,23 +18,23 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
-#include "testutil.h"
-#include "warnless.h"
 #include "memdebug.h"
 
 /*
  * Get a single URL without select().
  */
 
-int test(char *URL)
+static CURLcode test_lib658(const char *URL)
 {
   CURL *handle = NULL;
-  CURLcode res = 0;
+  CURLcode res = CURLE_OK;
   CURLU *urlp = NULL;
-  CURLUcode uc = 0;
+  CURLUcode uc = CURLUE_OK;
 
   global_init(CURL_GLOBAL_ALL);
   easy_init(handle);
@@ -42,14 +42,14 @@ int test(char *URL)
   urlp = curl_url();
 
   if(!urlp) {
-    fprintf(stderr, "problem init URL api.");
+    curl_mfprintf(stderr, "problem init URL api.");
     goto test_cleanup;
   }
 
   uc = curl_url_set(urlp, CURLUPART_URL, URL, 0);
   if(uc) {
-    fprintf(stderr, "problem setting CURLUPART_URL: %s.",
-            curl_url_strerror(uc));
+    curl_mfprintf(stderr, "problem setting CURLUPART_URL: %s.",
+                  curl_url_strerror(uc));
     goto test_cleanup;
   }
 
@@ -62,8 +62,9 @@ int test(char *URL)
   res = curl_easy_perform(handle);
 
   if(res) {
-    fprintf(stderr, "%s:%d curl_easy_perform() failed with code %d (%s)\n",
-            __FILE__, __LINE__, res, curl_easy_strerror(res));
+    curl_mfprintf(stderr, "%s:%d curl_easy_perform() failed "
+                  "with code %d (%s)\n",
+                  __FILE__, __LINE__, res, curl_easy_strerror(res));
     goto test_cleanup;
   }
 

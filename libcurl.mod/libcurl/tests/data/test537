@@ -40,13 +40,13 @@ lib%TESTNUMBER
 # precheck is a command line to run before the test, to see if we can execute
 # the test or not
 <precheck>
-./libtest/lib%TESTNUMBER check
+%LIBTESTS lib%TESTNUMBER check
 </precheck>
 
- <name>
+<name>
 HTTP GET with a HUGE number of file descriptors open
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </command>
 </client>
@@ -60,5 +60,8 @@ Host: %HOSTIP:%HTTPPORT
 Accept: */*
 
 </protocol>
+<limits>
+Maximum allocated: 3200000
+</limits>
 </verify>
 </testcase>

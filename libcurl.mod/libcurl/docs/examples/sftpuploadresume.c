@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 /* <DESC>
@@ -54,10 +56,10 @@ static curl_off_t sftpGetRemoteFileSize(const char *i_remoteFile)
   curl_easy_setopt(curlHandlePtr, CURLOPT_VERBOSE, 1L);
 
   curl_easy_setopt(curlHandlePtr, CURLOPT_URL, i_remoteFile);
-  curl_easy_setopt(curlHandlePtr, CURLOPT_NOPROGRESS, 1);
-  curl_easy_setopt(curlHandlePtr, CURLOPT_NOBODY, 1);
-  curl_easy_setopt(curlHandlePtr, CURLOPT_HEADER, 1);
-  curl_easy_setopt(curlHandlePtr, CURLOPT_FILETIME, 1);
+  curl_easy_setopt(curlHandlePtr, CURLOPT_NOPROGRESS, 1L);
+  curl_easy_setopt(curlHandlePtr, CURLOPT_NOBODY, 1L);
+  curl_easy_setopt(curlHandlePtr, CURLOPT_HEADER, 1L);
+  curl_easy_setopt(curlHandlePtr, CURLOPT_FILETIME, 1L);
 
   result = curl_easy_perform(curlHandlePtr);
   if(CURLE_OK == result) {
@@ -66,7 +68,7 @@ static curl_off_t sftpGetRemoteFileSize(const char *i_remoteFile)
                                &remoteFileSizeByte);
     if(result)
       return -1;
-    printf("filesize: %" CURL_FORMAT_CURL_OFF_T "\n", remoteFileSizeByte);
+    printf("filesize: %lu\n", (unsigned long)remoteFileSizeByte);
   }
   curl_easy_cleanup(curlHandlePtr);
 
@@ -81,14 +83,16 @@ static int sftpResumeUpload(CURL *curlhandle, const char *remotepath,
   CURLcode result = CURLE_GOT_NOTHING;
 
   curl_off_t remoteFileSizeByte = sftpGetRemoteFileSize(remotepath);
-  if(-1 == remoteFileSizeByte) {
+  if(remoteFileSizeByte == -1) {
     printf("Error reading the remote file size: unable to resume upload\n");
     return -1;
   }
 
   f = fopen(localpath, "rb");
   if(!f) {
+#ifndef UNDER_CE
     perror(NULL);
+#endif
     return 0;
   }
 
@@ -97,7 +101,7 @@ static int sftpResumeUpload(CURL *curlhandle, const char *remotepath,
   curl_easy_setopt(curlhandle, CURLOPT_READFUNCTION, readfunc);
   curl_easy_setopt(curlhandle, CURLOPT_READDATA, f);
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(UNDER_CE)
   _fseeki64(f, remoteFileSizeByte, SEEK_SET);
 #else
   fseek(f, (long)remoteFileSizeByte, SEEK_SET);

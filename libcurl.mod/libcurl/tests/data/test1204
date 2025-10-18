@@ -51,10 +51,10 @@ This IS the real page!
 <server>
 http
 </server>
- <name>
+<name>
 HTTP with WWW-Authenticate and multiple auths in a single line
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER -u testuser:testpass --anyauth
 </command>
 </client>
@@ -69,7 +69,7 @@ Accept: */*
 
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
-Authorization: Basic dGVzdHVzZXI6dGVzdHBhc3M=
+Authorization: Basic %b64[testuser:testpass]b64%
 User-Agent: curl/%VERSION
 Accept: */*
 

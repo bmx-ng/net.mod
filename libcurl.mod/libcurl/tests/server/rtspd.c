@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,8 +18,10 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
-#include "server_setup.h"
+#include "first.h"
 
 /*
  * curl's test suite Real Time Streaming Protocol (RTSP) server.
@@ -27,57 +29,16 @@
  * This source file was started based on curl's HTTP test suite server.
  */
 
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-#ifdef HAVE_NETINET_IN6_H
-#include <netinet/in6.h>
-#endif
-#ifdef HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#ifdef HAVE_NETDB_H
-#include <netdb.h>
-#endif
 #ifdef HAVE_NETINET_TCP_H
 #include <netinet/tcp.h> /* for TCP_NODELAY */
 #endif
 
-#define ENABLE_CURLX_PRINTF
-/* make the curlx header define all printf() functions to use the curlx_*
-   versions instead */
-#include "curlx.h" /* from the private lib dir */
-#include "getpart.h"
-#include "util.h"
-#include "server_sockaddr.h"
-
-/* include memdebug.h last */
-#include "memdebug.h"
-
-#ifdef USE_WINSOCK
-#undef  EINTR
-#define EINTR    4 /* errno.h value */
-#undef  ERANGE
-#define ERANGE  34 /* errno.h value */
-#endif
-
-#ifdef ENABLE_IPV6
-static bool use_ipv6 = FALSE;
-#endif
-static const char *ipv_inuse = "IPv4";
-static int serverlogslocked = 0;
-
-#define REQBUFSIZ 150000
-#define REQBUFSIZ_TXT "149999"
-
-static long prevtestno = -1;    /* previous test number we served */
-static long prevpartno = -1;    /* previous part number we served */
-static bool prevbounce = FALSE; /* instructs the server to increase the part
-                                   number for a test in case the identical
-                                   testno+partno request shows up again */
+static long rtspd_prevtestno = -1;    /* previous test number we served */
+static long rtspd_prevpartno = -1;    /* previous part number we served */
+static bool rtspd_prevbounce = FALSE; /* instructs the server to override the
+                                         requested part number to
+                                         prevpartno + 1 when prevtestno and
+                                         current test are the same */
 
 #define RCMD_NORMALREQ 0 /* default request, use the tests file normally */
 #define RCMD_IDLE      1 /* told to sit idle */
@@ -89,13 +50,13 @@ typedef enum {
   RPROT_HTTP = 2
 } reqprot_t;
 
-#define SET_RTP_PKT_CHN(p,c)  ((p)[1] = (unsigned char)((c) & 0xFF))
+#define SET_RTP_PKT_CHN(p,c)  ((p)[1] = (char)((c) & 0xFF))
 
-#define SET_RTP_PKT_LEN(p,l) (((p)[2] = (unsigned char)(((l) >> 8) & 0xFF)), \
-                              ((p)[3] = (unsigned char)((l) & 0xFF)))
+#define SET_RTP_PKT_LEN(p,l) (((p)[2] = (char)(((l) >> 8) & 0xFF)), \
+                              ((p)[3] = (char)((l) & 0xFF)))
 
-struct httprequest {
-  char reqbuf[REQBUFSIZ]; /* buffer area for the incoming request */
+struct rtspd_httprequest {
+  char reqbuf[150000]; /* buffer area for the incoming request */
   size_t checkindex; /* where to start checking of the request */
   size_t offset;     /* size of the incoming request */
   long testno;       /* test number found in the request */
@@ -106,7 +67,7 @@ struct httprequest {
   bool auth;      /* Authorization header present in the incoming request */
   size_t cl;      /* Content-Length of the incoming request */
   bool digest;    /* Authorization digest header found */
-  bool ntlm;      /* Authorization ntlm header found */
+  bool ntlm;      /* Authorization NTLM header found */
   int pipe;       /* if non-zero, expect this many requests to do a "piped"
                      request/response */
   int skip;       /* if non-zero, the server is instructed to not read this
@@ -121,21 +82,10 @@ struct httprequest {
   size_t rtp_buffersize;
 };
 
-static int ProcessRequest(struct httprequest *req);
-static void storerequest(char *reqbuf, size_t totalsize);
-
-#define DEFAULT_PORT 8999
-
-#ifndef DEFAULT_LOGFILE
-#define DEFAULT_LOGFILE "log/rtspd.log"
-#endif
-
-const char *serverlogfile = DEFAULT_LOGFILE;
-
 #define RTSPDVERSION "curl test suite RTSP server/0.1"
 
-#define REQUEST_DUMP  "log/server.input"
-#define RESPONSE_DUMP "log/server.response"
+#define REQUEST_DUMP  "server.input"
+#define RESPONSE_DUMP "server.response"
 
 /* very-big-path support */
 #define MAXDOCNAMELEN 140000
@@ -155,19 +105,9 @@ const char *serverlogfile = DEFAULT_LOGFILE;
 
 #define END_OF_HEADERS "\r\n\r\n"
 
-enum {
-  DOCNUMBER_NOTHING = -7,
-  DOCNUMBER_QUIT    = -6,
-  DOCNUMBER_BADCONNECT = -5,
-  DOCNUMBER_INTERNAL = -4,
-  DOCNUMBER_CONNECT = -3,
-  DOCNUMBER_WERULEZ = -2,
-  DOCNUMBER_404     = -1
-};
-
 
 /* sent as reply to a QUIT */
-static const char *docquit =
+static const char *docquit_rtsp =
 "HTTP/1.1 200 Goodbye" END_OF_HEADERS;
 
 /* sent as reply to a CONNECT */
@@ -180,28 +120,28 @@ static const char *docbadconnect =
 
 /* send back this on HTTP 404 file not found */
 static const char *doc404_HTTP = "HTTP/1.1 404 Not Found\r\n"
-    "Server: " RTSPDVERSION "\r\n"
-    "Connection: close\r\n"
-    "Content-Type: text/html"
-    END_OF_HEADERS
-    "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
-    "<HTML><HEAD>\n"
-    "<TITLE>404 Not Found</TITLE>\n"
-    "</HEAD><BODY>\n"
-    "<H1>Not Found</H1>\n"
-    "The requested URL was not found on this server.\n"
-    "<P><HR><ADDRESS>" RTSPDVERSION "</ADDRESS>\n" "</BODY></HTML>\n";
+  "Server: " RTSPDVERSION "\r\n"
+  "Connection: close\r\n"
+  "Content-Type: text/html"
+  END_OF_HEADERS
+  "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
+  "<HTML><HEAD>\n"
+  "<TITLE>404 Not Found</TITLE>\n"
+  "</HEAD><BODY>\n"
+  "<H1>Not Found</H1>\n"
+  "The requested URL was not found on this server.\n"
+  "<P><HR><ADDRESS>" RTSPDVERSION "</ADDRESS>\n" "</BODY></HTML>\n";
 
 /* send back this on RTSP 404 file not found */
 static const char *doc404_RTSP = "RTSP/1.0 404 Not Found\r\n"
-    "Server: " RTSPDVERSION
-    END_OF_HEADERS;
+  "Server: " RTSPDVERSION
+  END_OF_HEADERS;
 
 /* Default size to send away fake RTP data */
 #define RTP_DATA_SIZE 12
-static const char *RTP_DATA = "$_1234\n\0asdf";
+static const char *RTP_DATA = "$_1234\n\0Rsdf";
 
-static int ProcessRequest(struct httprequest *req)
+static int rtspd_ProcessRequest(struct rtspd_httprequest *req)
 {
   char *line = &req->reqbuf[req->checkindex];
   bool chunked = FALSE;
@@ -211,7 +151,7 @@ static int ProcessRequest(struct httprequest *req)
   int prot_major, prot_minor;
   char *end = strstr(line, END_OF_HEADERS);
 
-  logmsg("ProcessRequest() called with testno %ld and line [%s]",
+  logmsg("rtspd_ProcessRequest() called with testno %ld and line [%s]",
          req->testno, line);
 
   /* try to figure out the request characteristics as soon as possible, but
@@ -225,7 +165,6 @@ static int ProcessRequest(struct httprequest *req)
             &prot_major,
             &prot_minor) == 5) {
     char *ptr;
-    char logbuf[256];
 
     if(!strcmp(prot_str, "HTTP")) {
       req->protocol = RPROT_HTTP;
@@ -248,12 +187,11 @@ static int ProcessRequest(struct httprequest *req)
     if(ptr) {
       FILE *stream;
       if((strlen(doc) + strlen(request)) < 200)
-        msnprintf(logbuf, sizeof(logbuf), "Got request: %s %s %s/%d.%d",
-                  request, doc, prot_str, prot_major, prot_minor);
+        logmsg("Got request: %s %s %s/%d.%d",
+               request, doc, prot_str, prot_major, prot_minor);
       else
-        msnprintf(logbuf, sizeof(logbuf), "Got a *HUGE* request %s/%d.%d",
-                  prot_str, prot_major, prot_minor);
-      logmsg("%s", logbuf);
+        logmsg("Got a *HUGE* request %s/%d.%d",
+               prot_str, prot_major, prot_minor);
 
       if(!strncmp("/verifiedserver", ptr, 15)) {
         logmsg("Are-we-friendly question received");
@@ -282,15 +220,13 @@ static int ProcessRequest(struct httprequest *req)
       else
         req->partno = 0;
 
-      msnprintf(logbuf, sizeof(logbuf), "Requested test number %ld part %ld",
-                req->testno, req->partno);
-      logmsg("%s", logbuf);
+      logmsg("Requested test number %ld part %ld", req->testno, req->partno);
 
-      stream = test2fopen(req->testno);
+      stream = test2fopen(req->testno, logdir);
 
       if(!stream) {
         int error = errno;
-        logmsg("fopen() failed with error: %d %s", error, strerror(error));
+        logmsg("fopen() failed with error (%d) %s", error, strerror(error));
         logmsg("Couldn't open test file %ld", req->testno);
         req->open = FALSE; /* closes connection */
         return 1; /* done */
@@ -302,6 +238,7 @@ static int ProcessRequest(struct httprequest *req)
 
         int rtp_channel = 0;
         int rtp_size = 0;
+        int rtp_size_err = 0;
         int rtp_partno = -1;
         char *rtp_scratch = NULL;
 
@@ -309,7 +246,7 @@ static int ProcessRequest(struct httprequest *req)
         int error = getpart(&cmd, &cmdsize, "reply", "servercmd", stream);
         fclose(stream);
         if(error) {
-          logmsg("getpart() failed with error: %d", error);
+          logmsg("getpart() failed with error (%d)", error);
           req->open = FALSE; /* closes connection */
           return 1; /* done */
         }
@@ -318,6 +255,7 @@ static int ProcessRequest(struct httprequest *req)
         if(cmdsize) {
           logmsg("Found a reply-servercmd section!");
           do {
+            rtp_size_err = 0;
             if(!strncmp(CMD_AUTH_REQUIRED, ptr, strlen(CMD_AUTH_REQUIRED))) {
               logmsg("instructed to require authorization header");
               req->auth_req = TRUE;
@@ -331,7 +269,7 @@ static int ProcessRequest(struct httprequest *req)
               logmsg("instructed to stream");
               req->rcmd = RCMD_STREAM;
             }
-            else if(1 == sscanf(ptr, "pipe: %d", &num)) {
+            else if(sscanf(ptr, "pipe: %d", &num) == 1) {
               logmsg("instructed to allow a pipe size of %d", num);
               if(num < 0)
                 logmsg("negative pipe size ignored");
@@ -339,17 +277,19 @@ static int ProcessRequest(struct httprequest *req)
                 req->pipe = num-1; /* decrease by one since we don't count the
                                       first request in this number */
             }
-            else if(1 == sscanf(ptr, "skip: %d", &num)) {
+            else if(sscanf(ptr, "skip: %d", &num) == 1) {
               logmsg("instructed to skip this number of bytes %d", num);
               req->skip = num;
             }
-            else if(3 == sscanf(ptr, "rtp: part %d channel %d size %d",
-                                &rtp_partno, &rtp_channel, &rtp_size)) {
+            else if(3 <= sscanf(ptr,
+                                "rtp: part %d channel %d size %d size_err %d",
+                                &rtp_partno, &rtp_channel, &rtp_size,
+                                &rtp_size_err)) {
 
               if(rtp_partno == req->partno) {
                 int i = 0;
-                logmsg("RTP: part %d channel %d size %d",
-                       rtp_partno, rtp_channel, rtp_size);
+                logmsg("RTP: part %d channel %d size %d size_err %d",
+                       rtp_partno, rtp_channel, rtp_size, rtp_size_err);
 
                 /* Make our scratch buffer enough to fit all the
                  * desired data and one for padding */
@@ -362,7 +302,7 @@ static int ProcessRequest(struct httprequest *req)
                 SET_RTP_PKT_CHN(rtp_scratch, rtp_channel);
 
                 /* Length follows and is a two byte short in network order */
-                SET_RTP_PKT_LEN(rtp_scratch, rtp_size);
+                SET_RTP_PKT_LEN(rtp_scratch, rtp_size + rtp_size_err);
 
                 /* Fill it with junk data */
                 for(i = 0; i < rtp_size; i += RTP_DATA_SIZE) {
@@ -404,10 +344,8 @@ static int ProcessRequest(struct httprequest *req)
     else {
       if(sscanf(req->reqbuf, "CONNECT %" MAXDOCNAMELEN_TXT "s HTTP/%d.%d",
                 doc, &prot_major, &prot_minor) == 3) {
-        msnprintf(logbuf, sizeof(logbuf),
-                  "Received a CONNECT %s HTTP/%d.%d request",
-                  doc, prot_major, prot_minor);
-        logmsg("%s", logbuf);
+        logmsg("Received a CONNECT %s HTTP/%d.%d request",
+               doc, prot_major, prot_minor);
 
         if(req->prot_version == 10)
           req->open = FALSE; /* HTTP 1.0 closes connection by default */
@@ -436,10 +374,10 @@ static int ProcessRequest(struct httprequest *req)
 
   if(!end) {
     /* we don't have a complete request yet! */
-    logmsg("ProcessRequest returned without a complete request");
+    logmsg("rtspd_ProcessRequest returned without a complete request");
     return 0; /* not complete yet */
   }
-  logmsg("ProcessRequest found a complete request");
+  logmsg("rtspd_ProcessRequest found a complete request");
 
   if(req->pipe)
     /* we do have a full set, advance the checkindex to after the end of the
@@ -448,10 +386,10 @@ static int ProcessRequest(struct httprequest *req)
 
   /* **** Persistence ****
    *
-   * If the request is a HTTP/1.0 one, we close the connection unconditionally
+   * If the request is an HTTP/1.0 one, we close the connection unconditionally
    * when we're done.
    *
-   * If the request is a HTTP/1.1 one, we MUST check for a "Connection:"
+   * If the request is an HTTP/1.1 one, we MUST check for a "Connection:"
    * header that might say "close". If it does, we close a connection when
    * this request is processed. Otherwise, we keep the connection alive for X
    * seconds.
@@ -461,34 +399,28 @@ static int ProcessRequest(struct httprequest *req)
     if(got_exit_signal)
       return 1; /* done */
 
-    if((req->cl == 0) && strncasecompare("Content-Length:", line, 15)) {
+    if((req->cl == 0) && !CURL_STRNICMP("Content-Length:", line, 15)) {
       /* If we don't ignore content-length, we read it and we read the whole
          request including the body before we return. If we've been told to
          ignore the content-length, we will return as soon as all headers
          have been received */
-      char *endptr;
-      char *ptr = line + 15;
-      unsigned long clen = 0;
-      while(*ptr && ISSPACE(*ptr))
-        ptr++;
-      endptr = ptr;
-      errno = 0;
-      clen = strtoul(ptr, &endptr, 10);
-      if((ptr == endptr) || !ISSPACE(*endptr) || (ERANGE == errno)) {
+      curl_off_t clen;
+      const char *p = line + strlen("Content-Length:");
+      if(curlx_str_numblanks(&p, &clen)) {
         /* this assumes that a zero Content-Length is valid */
-        logmsg("Found invalid Content-Length: (%s) in the request", ptr);
+        logmsg("Found invalid '%s' in the request", line);
         req->open = FALSE; /* closes connection */
         return 1; /* done */
       }
-      req->cl = clen - req->skip;
+      req->cl = (size_t)clen - req->skip;
 
-      logmsg("Found Content-Length: %lu in the request", clen);
+      logmsg("Found Content-Length: %zu in the request", (size_t)clen);
       if(req->skip)
         logmsg("... but will abort after %zu bytes", req->cl);
       break;
     }
-    else if(strncasecompare("Transfer-Encoding: chunked", line,
-                            strlen("Transfer-Encoding: chunked"))) {
+    else if(!CURL_STRNICMP("Transfer-Encoding: chunked", line,
+                           strlen("Transfer-Encoding: chunked"))) {
       /* chunked data coming in */
       chunked = TRUE;
     }
@@ -591,13 +523,16 @@ static int ProcessRequest(struct httprequest *req)
 }
 
 /* store the entire request in a file */
-static void storerequest(char *reqbuf, size_t totalsize)
+static void rtspd_storerequest(char *reqbuf, size_t totalsize)
 {
   int res;
   int error = 0;
   size_t written;
   size_t writeleft;
   FILE *dump;
+  char dumpfile[256];
+
+  snprintf(dumpfile, sizeof(dumpfile), "%s/%s", logdir, REQUEST_DUMP);
 
   if(!reqbuf)
     return;
@@ -605,46 +540,46 @@ static void storerequest(char *reqbuf, size_t totalsize)
     return;
 
   do {
-    dump = fopen(REQUEST_DUMP, "ab");
+    dump = fopen(dumpfile, "ab");
+    /* !checksrc! disable ERRNOVAR 1 */
   } while(!dump && ((error = errno) == EINTR));
   if(!dump) {
-    logmsg("Error opening file %s error: %d %s",
-           REQUEST_DUMP, error, strerror(error));
-    logmsg("Failed to write request input to " REQUEST_DUMP);
+    logmsg("Error opening file %s error (%d) %s",
+           dumpfile, error, strerror(error));
+    logmsg("Failed to write request input to %s", dumpfile);
     return;
   }
 
   writeleft = totalsize;
   do {
-    written = fwrite(&reqbuf[totalsize-writeleft],
-                     1, writeleft, dump);
+    written = fwrite(&reqbuf[totalsize-writeleft], 1, writeleft, dump);
     if(got_exit_signal)
       goto storerequest_cleanup;
     if(written > 0)
       writeleft -= written;
-  } while((writeleft > 0) && ((error = errno) == EINTR));
+    error = errno;
+    /* !checksrc! disable ERRNOVAR 1 */
+  } while((writeleft > 0) && (error == EINTR));
 
   if(writeleft == 0)
-    logmsg("Wrote request (%zu bytes) input to " REQUEST_DUMP, totalsize);
+    logmsg("Wrote request (%zu bytes) input to %s", totalsize, dumpfile);
   else if(writeleft > 0) {
-    logmsg("Error writing file %s error: %d %s",
-           REQUEST_DUMP, error, strerror(error));
+    logmsg("Error writing file %s error (%d) %s",
+           dumpfile, error, strerror(error));
     logmsg("Wrote only (%zu bytes) of (%zu bytes) request input to %s",
-           totalsize-writeleft, totalsize, REQUEST_DUMP);
+           totalsize-writeleft, totalsize, dumpfile);
   }
 
 storerequest_cleanup:
 
-  do {
-    res = fclose(dump);
-  } while(res && ((error = errno) == EINTR));
+  res = fclose(dump);
   if(res)
-    logmsg("Error closing file %s error: %d %s",
-           REQUEST_DUMP, error, strerror(error));
+    logmsg("Error closing file %s error (%d) %s",
+           dumpfile, errno, strerror(errno));
 }
 
 /* return 0 on success, non-zero on failure */
-static int get_request(curl_socket_t sock, struct httprequest *req)
+static int rtspd_get_request(curl_socket_t sock, struct rtspd_httprequest *req)
 {
   int error;
   int fail = 0;
@@ -683,7 +618,7 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
 
   /*** end of httprequest init ***/
 
-  while(!done_processing && (req->offset < REQBUFSIZ-1)) {
+  while(!done_processing && (req->offset < sizeof(req->reqbuf)-1)) {
     if(pipereq_length && pipereq) {
       memmove(reqbuf, pipereq, pipereq_length);
       got = curlx_uztosz(pipereq_length);
@@ -696,7 +631,8 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
            client wants to send! */
         got = sread(sock, reqbuf + req->offset, req->cl);
       else
-        got = sread(sock, reqbuf + req->offset, REQBUFSIZ-1 - req->offset);
+        got = sread(sock, reqbuf + req->offset,
+                    sizeof(req->reqbuf)-1 - req->offset);
     }
     if(got_exit_signal)
       return 1;
@@ -706,13 +642,13 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
     }
     else if(got < 0) {
       error = SOCKERRNO;
-      logmsg("recv() returned error: (%d) %s", error, strerror(error));
+      logmsg("recv() returned error (%d) %s", error, sstrerror(error));
       fail = 1;
     }
     if(fail) {
       /* dump the request received so far to the external file */
       reqbuf[req->offset] = '\0';
-      storerequest(reqbuf, req->offset);
+      rtspd_storerequest(reqbuf, req->offset);
       return 1;
     }
 
@@ -721,7 +657,7 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
     req->offset += (size_t)got;
     reqbuf[req->offset] = '\0';
 
-    done_processing = ProcessRequest(req);
+    done_processing = rtspd_ProcessRequest(req);
     if(got_exit_signal)
       return 1;
     if(done_processing && req->pipe) {
@@ -731,23 +667,23 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
     }
   }
 
-  if((req->offset == REQBUFSIZ-1) && (got > 0)) {
+  if((req->offset == sizeof(req->reqbuf)-1) && (got > 0)) {
     logmsg("Request would overflow buffer, closing connection");
     /* dump request received so far to external file anyway */
-    reqbuf[REQBUFSIZ-1] = '\0';
+    reqbuf[sizeof(req->reqbuf)-1] = '\0';
     fail = 1;
   }
-  else if(req->offset > REQBUFSIZ-1) {
+  else if(req->offset > sizeof(req->reqbuf)-1) {
     logmsg("Request buffer overflow, closing connection");
     /* dump request received so far to external file anyway */
-    reqbuf[REQBUFSIZ-1] = '\0';
+    reqbuf[sizeof(req->reqbuf)-1] = '\0';
     fail = 1;
   }
   else
     reqbuf[req->offset] = '\0';
 
   /* dump the request to an external file */
-  storerequest(reqbuf, req->pipelining ? req->checkindex : req->offset);
+  rtspd_storerequest(reqbuf, req->pipelining ? req->checkindex : req->offset);
   if(got_exit_signal)
     return 1;
 
@@ -755,7 +691,7 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
 }
 
 /* returns -1 on failure */
-static int send_doc(curl_socket_t sock, struct httprequest *req)
+static int rtspd_send_doc(curl_socket_t sock, struct rtspd_httprequest *req)
 {
   ssize_t written;
   size_t count;
@@ -769,8 +705,10 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
   size_t responsesize;
   int error = 0;
   int res;
-
   static char weare[256];
+  char responsedump[256];
+
+  snprintf(responsedump, sizeof(responsedump), "%s/%s", logdir, RESPONSE_DUMP);
 
   logmsg("Send response number %ld part %ld", req->testno, req->partno);
 
@@ -778,19 +716,19 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
   default:
   case RCMD_NORMALREQ:
     break; /* continue with business as usual */
-  case RCMD_STREAM:
-#define STREAMTHIS "a string to stream 01234567890\n"
-    count = strlen(STREAMTHIS);
+  case RCMD_STREAM: {
+    static const char streamthis[] = "a string to stream 01234567890\n";
     for(;;) {
-      written = swrite(sock, STREAMTHIS, count);
+      written = swrite(sock, streamthis, sizeof(streamthis)-1);
       if(got_exit_signal)
         return -1;
-      if(written != (ssize_t)count) {
+      if(written != (ssize_t)(sizeof(streamthis)-1)) {
         logmsg("Stopped streaming");
         break;
       }
     }
     return -1;
+  }
   case RCMD_IDLE:
     /* Do nothing. Sit idle. Pretend it rains. */
     return 0;
@@ -805,17 +743,17 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     switch(req->testno) {
     case DOCNUMBER_QUIT:
       logmsg("Replying to QUIT");
-      buffer = docquit;
+      buffer = docquit_rtsp;
       break;
     case DOCNUMBER_WERULEZ:
       /* we got a "friends?" question, reply back that we sure are */
       logmsg("Identifying ourselves as friends");
-      msnprintf(msgbuf, sizeof(msgbuf), "RTSP_SERVER WE ROOLZ: %"
-                CURL_FORMAT_CURL_OFF_T "\r\n", our_getpid());
+      snprintf(msgbuf, sizeof(msgbuf), "RTSP_SERVER WE ROOLZ: %ld\r\n",
+               (long)our_getpid());
       msglen = strlen(msgbuf);
-      msnprintf(weare, sizeof(weare),
-                "HTTP/1.1 200 OK\r\nContent-Length: %zu\r\n\r\n%s",
-                msglen, msgbuf);
+      snprintf(weare, sizeof(weare),
+               "HTTP/1.1 200 OK\r\nContent-Length: %u\r\n\r\n%s",
+               (unsigned int)msglen, msgbuf);
       buffer = weare;
       break;
     case DOCNUMBER_INTERNAL:
@@ -844,13 +782,13 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     count = strlen(buffer);
   }
   else {
-    FILE *stream = test2fopen(req->testno);
+    FILE *stream = test2fopen(req->testno, logdir);
     char partbuf[80]="data";
-    if(0 != req->partno)
-      msnprintf(partbuf, sizeof(partbuf), "data%ld", req->partno);
+    if(req->partno)
+      snprintf(partbuf, sizeof(partbuf), "data%ld", req->partno);
     if(!stream) {
       error = errno;
-      logmsg("fopen() failed with error: %d %s", error, strerror(error));
+      logmsg("fopen() failed with error (%d) %s", error, strerror(error));
       logmsg("Couldn't open test file");
       return 0;
     }
@@ -858,7 +796,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
       error = getpart(&ptr, &count, "reply", partbuf, stream);
       fclose(stream);
       if(error) {
-        logmsg("getpart() failed with error: %d", error);
+        logmsg("getpart() failed with error (%d)", error);
         return 0;
       }
       buffer = ptr;
@@ -870,10 +808,10 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     }
 
     /* re-open the same file again */
-    stream = test2fopen(req->testno);
+    stream = test2fopen(req->testno, logdir);
     if(!stream) {
       error = errno;
-      logmsg("fopen() failed with error: %d %s", error, strerror(error));
+      logmsg("fopen() failed with error (%d) %s", error, strerror(error));
       logmsg("Couldn't open test file");
       free(ptr);
       return 0;
@@ -883,7 +821,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
       error = getpart(&cmd, &cmdsize, "reply", "postcmd", stream);
       fclose(stream);
       if(error) {
-        logmsg("getpart() failed with error: %d", error);
+        logmsg("getpart() failed with error (%d)", error);
         free(ptr);
         return 0;
       }
@@ -904,18 +842,18 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     logmsg("connection close instruction \"swsclose\" found in response");
   }
   if(strstr(buffer, "swsbounce")) {
-    prevbounce = TRUE;
+    rtspd_prevbounce = TRUE;
     logmsg("enable \"swsbounce\" in the next request");
   }
   else
-    prevbounce = FALSE;
+    rtspd_prevbounce = FALSE;
 
-  dump = fopen(RESPONSE_DUMP, "ab");
+  dump = fopen(responsedump, "ab");
   if(!dump) {
     error = errno;
-    logmsg("fopen() failed with error: %d %s", error, strerror(error));
-    logmsg("Error opening file: %s", RESPONSE_DUMP);
-    logmsg("couldn't create logfile: " RESPONSE_DUMP);
+    logmsg("fopen() failed with error (%d) %s", error, strerror(error));
+    logmsg("Error opening file '%s'", responsedump);
+    logmsg("couldn't create logfile '%s'", responsedump);
     free(ptr);
     free(cmd);
     return -1;
@@ -944,7 +882,7 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
 
     count -= written;
     buffer += written;
-  } while(count>0);
+  } while(count > 0);
 
   /* Send out any RTP data */
   if(req->rtp_buffer) {
@@ -967,12 +905,10 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     req->rtp_buffersize = 0;
   }
 
-  do {
-    res = fclose(dump);
-  } while(res && ((error = errno) == EINTR));
+  res = fclose(dump);
   if(res)
-    logmsg("Error closing file %s error: %d %s",
-           RESPONSE_DUMP, error, strerror(error));
+    logmsg("Error closing file %s error (%d) %s",
+           responsedump, errno, strerror(errno));
 
   if(got_exit_signal) {
     free(ptr);
@@ -989,8 +925,8 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     return -1;
   }
 
-  logmsg("Response sent (%zu bytes) and written to " RESPONSE_DUMP,
-         responsesize);
+  logmsg("Response sent (%zu bytes) and written to %s",
+         responsesize, responsedump);
   free(ptr);
 
   if(cmdsize > 0) {
@@ -999,20 +935,20 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
     int num;
     ptr = cmd;
     do {
-      if(2 == sscanf(ptr, "%31s %d", command, &num)) {
+      if(sscanf(ptr, "%31s %d", command, &num) == 2) {
         if(!strcmp("wait", command)) {
           logmsg("Told to sleep for %d seconds", num);
           quarters = num * 4;
           while(quarters > 0) {
             quarters--;
-            res = wait_ms(250);
+            res = curlx_wait_ms(250);
             if(got_exit_signal)
               break;
             if(res) {
               /* should not happen */
-              error = errno;
-              logmsg("wait_ms() failed with error: (%d) %s",
-                     error, strerror(error));
+              error = SOCKERRNO;
+              logmsg("curlx_wait_ms() failed with error (%d) %s",
+                     error, sstrerror(error));
               break;
             }
           }
@@ -1032,14 +968,14 @@ static int send_doc(curl_socket_t sock, struct httprequest *req)
   free(cmd);
   req->open = persistent;
 
-  prevtestno = req->testno;
-  prevpartno = req->partno;
+  rtspd_prevtestno = req->testno;
+  rtspd_prevpartno = req->partno;
 
   return 0;
 }
 
 
-int main(int argc, char *argv[])
+static int test_rtspd(int argc, char *argv[])
 {
   srvr_sockaddr_union_t me;
   curl_socket_t sock = CURL_SOCKET_BAD;
@@ -1047,22 +983,24 @@ int main(int argc, char *argv[])
   int wrotepidfile = 0;
   int wroteportfile = 0;
   int flag;
-  unsigned short port = DEFAULT_PORT;
-  const char *pidname = ".rtsp.pid";
-  const char *portname = NULL; /* none by default */
-  struct httprequest req;
+  unsigned short port = 8999;
+  struct rtspd_httprequest req;
   int rc;
   int error;
   int arg = 1;
 
   memset(&req, 0, sizeof(req));
 
-  while(argc>arg) {
+  pidname = ".rtsp.pid";
+  serverlogfile = "log/rtspd.log";
+  serverlogslocked = 0;
+
+  while(argc > arg) {
     if(!strcmp("--version", argv[arg])) {
       printf("rtspd IPv4%s"
              "\n"
              ,
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
              "/IPv6"
 #else
              ""
@@ -1072,28 +1010,33 @@ int main(int argc, char *argv[])
     }
     else if(!strcmp("--pidfile", argv[arg])) {
       arg++;
-      if(argc>arg)
+      if(argc > arg)
         pidname = argv[arg++];
     }
     else if(!strcmp("--portfile", argv[arg])) {
       arg++;
-      if(argc>arg)
+      if(argc > arg)
         portname = argv[arg++];
     }
     else if(!strcmp("--logfile", argv[arg])) {
       arg++;
-      if(argc>arg)
+      if(argc > arg)
         serverlogfile = argv[arg++];
     }
+    else if(!strcmp("--logdir", argv[arg])) {
+      arg++;
+      if(argc > arg)
+        logdir = argv[arg++];
+    }
     else if(!strcmp("--ipv4", argv[arg])) {
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
       ipv_inuse = "IPv4";
       use_ipv6 = FALSE;
 #endif
       arg++;
     }
     else if(!strcmp("--ipv6", argv[arg])) {
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
       ipv_inuse = "IPv6";
       use_ipv6 = TRUE;
 #endif
@@ -1101,17 +1044,17 @@ int main(int argc, char *argv[])
     }
     else if(!strcmp("--port", argv[arg])) {
       arg++;
-      if(argc>arg) {
+      if(argc > arg) {
         char *endptr;
         unsigned long ulnum = strtoul(argv[arg], &endptr, 10);
-        port = curlx_ultous(ulnum);
+        port = util_ultous(ulnum);
         arg++;
       }
     }
     else if(!strcmp("--srcdir", argv[arg])) {
       arg++;
-      if(argc>arg) {
-        path = argv[arg];
+      if(argc > arg) {
+        srcpath = argv[arg];
         arg++;
       }
     }
@@ -1119,6 +1062,7 @@ int main(int argc, char *argv[])
       puts("Usage: rtspd [option]\n"
            " --version\n"
            " --logfile [file]\n"
+           " --logdir [directory]\n"
            " --pidfile [file]\n"
            " --portfile [file]\n"
            " --ipv4\n"
@@ -1129,39 +1073,41 @@ int main(int argc, char *argv[])
     }
   }
 
-#ifdef WIN32
-  win32_init();
-  atexit(win32_cleanup);
+  snprintf(loglockfile, sizeof(loglockfile), "%s/%s/rtsp-%s.lock",
+           logdir, SERVERLOGS_LOCKDIR, ipv_inuse);
+
+#ifdef _WIN32
+  if(win32_init())
+    return 2;
 #endif
 
   install_signal_handlers(false);
 
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   if(!use_ipv6)
 #endif
     sock = socket(AF_INET, SOCK_STREAM, 0);
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   else
     sock = socket(AF_INET6, SOCK_STREAM, 0);
 #endif
 
   if(CURL_SOCKET_BAD == sock) {
     error = SOCKERRNO;
-    logmsg("Error creating socket: (%d) %s",
-           error, strerror(error));
+    logmsg("Error creating socket (%d) %s", error, sstrerror(error));
     goto server_cleanup;
   }
 
   flag = 1;
-  if(0 != setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-            (void *)&flag, sizeof(flag))) {
+  if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+                (void *)&flag, sizeof(flag))) {
     error = SOCKERRNO;
-    logmsg("setsockopt(SO_REUSEADDR) failed with error: (%d) %s",
-           error, strerror(error));
+    logmsg("setsockopt(SO_REUSEADDR) failed with error (%d) %s",
+           error, sstrerror(error));
     goto server_cleanup;
   }
 
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   if(!use_ipv6) {
 #endif
     memset(&me.sa4, 0, sizeof(me.sa4));
@@ -1169,7 +1115,7 @@ int main(int argc, char *argv[])
     me.sa4.sin_addr.s_addr = INADDR_ANY;
     me.sa4.sin_port = htons(port);
     rc = bind(sock, &me.sa, sizeof(me.sa4));
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
   }
   else {
     memset(&me.sa6, 0, sizeof(me.sa6));
@@ -1178,11 +1124,11 @@ int main(int argc, char *argv[])
     me.sa6.sin6_port = htons(port);
     rc = bind(sock, &me.sa, sizeof(me.sa6));
   }
-#endif /* ENABLE_IPV6 */
-  if(0 != rc) {
+#endif /* USE_IPV6 */
+  if(rc) {
     error = SOCKERRNO;
-    logmsg("Error binding socket on port %hu: (%d) %s",
-           port, error, strerror(error));
+    logmsg("Error binding socket on port %hu (%d) %s",
+           port, error, sstrerror(error));
     goto server_cleanup;
   }
 
@@ -1191,19 +1137,19 @@ int main(int argc, char *argv[])
        port we actually got and update the listener port value with it. */
     curl_socklen_t la_size;
     srvr_sockaddr_union_t localaddr;
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
     if(!use_ipv6)
 #endif
       la_size = sizeof(localaddr.sa4);
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
     else
       la_size = sizeof(localaddr.sa6);
 #endif
     memset(&localaddr.sa, 0, (size_t)la_size);
     if(getsockname(sock, &localaddr.sa, &la_size) < 0) {
       error = SOCKERRNO;
-      logmsg("getsockname() failed with error: (%d) %s",
-             error, strerror(error));
+      logmsg("getsockname() failed with error (%d) %s",
+             error, sstrerror(error));
       sclose(sock);
       goto server_cleanup;
     }
@@ -1211,7 +1157,7 @@ int main(int argc, char *argv[])
     case AF_INET:
       port = ntohs(localaddr.sa4.sin_port);
       break;
-#ifdef ENABLE_IPV6
+#ifdef USE_IPV6
     case AF_INET6:
       port = ntohs(localaddr.sa6.sin6_port);
       break;
@@ -1233,10 +1179,10 @@ int main(int argc, char *argv[])
 
   /* start accepting connections */
   rc = listen(sock, 5);
-  if(0 != rc) {
+  if(rc) {
     error = SOCKERRNO;
-    logmsg("listen() failed with error: (%d) %s",
-           error, strerror(error));
+    logmsg("listen() failed with error (%d) %s",
+           error, sstrerror(error));
     goto server_cleanup;
   }
 
@@ -1262,23 +1208,23 @@ int main(int argc, char *argv[])
       break;
     if(CURL_SOCKET_BAD == msgsock) {
       error = SOCKERRNO;
-      logmsg("MAJOR ERROR: accept() failed with error: (%d) %s",
-             error, strerror(error));
+      logmsg("MAJOR ERROR, accept() failed with error (%d) %s",
+             error, sstrerror(error));
       break;
     }
 
     /*
-    ** As soon as this server acepts a connection from the test harness it
+    ** As soon as this server accepts a connection from the test harness it
     ** must set the server logs advisor read lock to indicate that server
     ** logs should not be read until this lock is removed by this server.
     */
 
-    set_advisor_read_lock(SERVERLOGS_LOCK);
+    set_advisor_read_lock(loglockfile);
     serverlogslocked = 1;
 
     logmsg("====> Client connect");
 
-#ifdef TCP_NODELAY
+#if defined(TCP_NODELAY) && !defined(__EMSCRIPTEN__)
     /*
      * Disable the Nagle algorithm to make it easier to send out a large
      * response in many small segments to torture the clients more.
@@ -1290,9 +1236,9 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    /* initialization of httprequest struct is done in get_request(), but due
-       to pipelining treatment the pipelining struct field must be initialized
-       previously to FALSE every time a new connection arrives. */
+    /* initialization of httprequest struct is done in rtspd_get_request(),
+       but due to pipelining treatment the pipelining struct field must be
+       initialized previously to FALSE every time a new connection arrives. */
 
     req.pipelining = FALSE;
 
@@ -1300,25 +1246,24 @@ int main(int argc, char *argv[])
       if(got_exit_signal)
         break;
 
-      if(get_request(msgsock, &req))
+      if(rtspd_get_request(msgsock, &req))
         /* non-zero means error, break out of loop */
         break;
 
-      if(prevbounce) {
+      if(rtspd_prevbounce) {
         /* bounce treatment requested */
-        if((req.testno == prevtestno) &&
-           (req.partno == prevpartno)) {
-          req.partno++;
+        if(req.testno == rtspd_prevtestno) {
+          req.partno = rtspd_prevpartno + 1;
           logmsg("BOUNCE part number to %ld", req.partno);
         }
         else {
-          prevbounce = FALSE;
-          prevtestno = -1;
-          prevpartno = -1;
+          rtspd_prevbounce = FALSE;
+          rtspd_prevtestno = -1;
+          rtspd_prevpartno = -1;
         }
       }
 
-      send_doc(msgsock, &req);
+      rtspd_send_doc(msgsock, &req);
       if(got_exit_signal)
         break;
 
@@ -1345,7 +1290,7 @@ int main(int argc, char *argv[])
 
     if(serverlogslocked) {
       serverlogslocked = 0;
-      clear_advisor_read_lock(SERVERLOGS_LOCK);
+      clear_advisor_read_lock(loglockfile);
     }
 
     if(req.testno == DOCNUMBER_QUIT)
@@ -1370,14 +1315,14 @@ server_cleanup:
 
   if(serverlogslocked) {
     serverlogslocked = 0;
-    clear_advisor_read_lock(SERVERLOGS_LOCK);
+    clear_advisor_read_lock(loglockfile);
   }
 
   restore_signal_handlers(false);
 
   if(got_exit_signal) {
     logmsg("========> %s rtspd (port: %d pid: %ld) exits with signal (%d)",
-           ipv_inuse, (int)port, (long)getpid(), exit_signal);
+           ipv_inuse, (int)port, (long)our_getpid(), exit_signal);
     /*
      * To properly set the return status of the process we
      * must raise the same signal SIGINT or SIGTERM that we

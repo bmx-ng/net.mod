@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,54 +18,34 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
 #include "memdebug.h"
 
-static char data[]=
-#ifdef CURL_DOES_CONVERSIONS
-  /* ASCII representation with escape sequences for non-ASCII platforms */
-  "\x64\x75\x6d\x6d\x79\x0a";
-#else
-  "dummy\n";
-#endif
-
-struct WriteThis {
-  char *readptr;
+struct t643_WriteThis {
+  const char *readptr;
   curl_off_t sizeleft;
 };
 
-static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
+static size_t t643_read_cb(char *ptr, size_t size, size_t nmemb, void *userp)
 {
-#ifdef LIB644
-  static int count = 0;
-  (void)ptr;
-  (void)size;
-  (void)nmemb;
-  (void)userp;
-  switch(count++) {
-  case 0: /* Return a single byte. */
-    *ptr = '\n';
-    return 1;
-  case 1: /* Request abort. */
-    return CURL_READFUNC_ABORT;
-  }
-  printf("Wrongly called >2 times\n");
-  exit(1); /* trigger major failure */
-#else
-
-  struct WriteThis *pooh = (struct WriteThis *)userp;
-  int eof = !*pooh->readptr;
+  struct t643_WriteThis *pooh = (struct t643_WriteThis *)userp;
+  int eof;
 
   if(size*nmemb < 1)
     return 0;
 
-#ifndef LIB645
-  eof = pooh->sizeleft <= 0;
-  if(!eof)
-    pooh->sizeleft--;
-#endif
+  if(testnum == 643) {
+    eof = pooh->sizeleft <= 0;
+    if(!eof)
+      pooh->sizeleft--;
+  }
+  else {
+    eof = !*pooh->readptr;
+  }
 
   if(!eof) {
     *ptr = *pooh->readptr;           /* copy one single byte */
@@ -73,37 +53,37 @@ static size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userp)
     return 1;                        /* we return 1 byte at a time! */
   }
 
-  return 0;                         /* no more data left to deliver */
-#endif
+  return 0;                          /* no more data left to deliver */
 }
 
-static int once(char *URL, bool oldstyle)
+static CURLcode t643_test_once(const char *URL, bool oldstyle)
 {
+  static const char testdata[] = "dummy\n";
+
   CURL *curl;
   CURLcode res = CURLE_OK;
 
   curl_mime *mime = NULL;
   curl_mimepart *part = NULL;
-  struct WriteThis pooh;
-  struct WriteThis pooh2;
+  struct t643_WriteThis pooh;
+  struct t643_WriteThis pooh2;
   curl_off_t datasize = -1;
 
-  pooh.readptr = data;
-#ifndef LIB645
-  datasize = (curl_off_t)strlen(data);
-#endif
+  pooh.readptr = testdata;
+  if(testnum == 643)
+    datasize = (curl_off_t)strlen(testdata);
   pooh.sizeleft = datasize;
 
   curl = curl_easy_init();
   if(!curl) {
-    fprintf(stderr, "curl_easy_init() failed\n");
+    curl_mfprintf(stderr, "curl_easy_init() failed\n");
     curl_global_cleanup();
     return TEST_ERR_MAJOR_BAD;
   }
 
   mime = curl_mime_init(curl);
   if(!mime) {
-    fprintf(stderr, "curl_mime_init() failed\n");
+    curl_mfprintf(stderr, "curl_mime_init() failed\n");
     curl_easy_cleanup(curl);
     curl_global_cleanup();
     return TEST_ERR_MAJOR_BAD;
@@ -111,7 +91,7 @@ static int once(char *URL, bool oldstyle)
 
   part = curl_mime_addpart(mime);
   if(!part) {
-    fprintf(stderr, "curl_mime_addpart(1) failed\n");
+    curl_mfprintf(stderr, "curl_mime_addpart(1) failed\n");
     curl_mime_free(mime);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
@@ -122,7 +102,7 @@ static int once(char *URL, bool oldstyle)
   if(oldstyle) {
     res = curl_mime_name(part, "sendfile");
     if(!res)
-      res = curl_mime_data_cb(part, datasize, read_callback,
+      res = curl_mime_data_cb(part, datasize, t643_read_cb,
                               NULL, NULL, &pooh);
     if(!res)
       res = curl_mime_filename(part, "postit2.c");
@@ -131,27 +111,26 @@ static int once(char *URL, bool oldstyle)
     /* new style */
     res = curl_mime_name(part, "sendfile alternative");
     if(!res)
-      res = curl_mime_data_cb(part, datasize, read_callback,
+      res = curl_mime_data_cb(part, datasize, t643_read_cb,
                               NULL, NULL, &pooh);
     if(!res)
       res = curl_mime_filename(part, "file name 2");
   }
 
   if(res)
-    printf("curl_mime_xxx(1) = %s\n", curl_easy_strerror(res));
+    curl_mprintf("curl_mime_xxx(1) = %s\n", curl_easy_strerror(res));
 
   /* Now add the same data with another name and make it not look like
      a file upload but still using the callback */
 
-  pooh2.readptr = data;
-#ifndef LIB645
-  datasize = (curl_off_t)strlen(data);
-#endif
+  pooh2.readptr = testdata;
+  if(testnum == 643)
+    datasize = (curl_off_t)strlen(testdata);
   pooh2.sizeleft = datasize;
 
   part = curl_mime_addpart(mime);
   if(!part) {
-    fprintf(stderr, "curl_mime_addpart(2) failed\n");
+    curl_mfprintf(stderr, "curl_mime_addpart(2) failed\n");
     curl_mime_free(mime);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
@@ -160,15 +139,15 @@ static int once(char *URL, bool oldstyle)
   /* Fill in the file upload part */
   res = curl_mime_name(part, "callbackdata");
   if(!res)
-    res = curl_mime_data_cb(part, datasize, read_callback,
+    res = curl_mime_data_cb(part, datasize, t643_read_cb,
                             NULL, NULL, &pooh2);
 
   if(res)
-    printf("curl_mime_xxx(2) = %s\n", curl_easy_strerror(res));
+    curl_mprintf("curl_mime_xxx(2) = %s\n", curl_easy_strerror(res));
 
   part = curl_mime_addpart(mime);
   if(!part) {
-    fprintf(stderr, "curl_mime_addpart(3) failed\n");
+    curl_mfprintf(stderr, "curl_mime_addpart(3) failed\n");
     curl_mime_free(mime);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
@@ -178,23 +157,16 @@ static int once(char *URL, bool oldstyle)
   /* Fill in the filename field */
   res = curl_mime_name(part, "filename");
   if(!res)
-    res = curl_mime_data(part,
-#ifdef CURL_DOES_CONVERSIONS
-                         /* ASCII representation with escape
-                            sequences for non-ASCII platforms */
-                         "\x70\x6f\x73\x74\x69\x74\x32\x2e\x63",
-#else
-                          "postit2.c",
-#endif
-                          CURL_ZERO_TERMINATED);
+    res = curl_mime_data(part, "postit2.c",
+                         CURL_ZERO_TERMINATED);
 
   if(res)
-    printf("curl_mime_xxx(3) = %s\n", curl_easy_strerror(res));
+    curl_mprintf("curl_mime_xxx(3) = %s\n", curl_easy_strerror(res));
 
   /* Fill in a submit field too */
   part = curl_mime_addpart(mime);
   if(!part) {
-    fprintf(stderr, "curl_mime_addpart(4) failed\n");
+    curl_mfprintf(stderr, "curl_mime_addpart(4) failed\n");
     curl_mime_free(mime);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
@@ -202,22 +174,15 @@ static int once(char *URL, bool oldstyle)
   }
   res = curl_mime_name(part, "submit");
   if(!res)
-    res = curl_mime_data(part,
-#ifdef CURL_DOES_CONVERSIONS
-                         /* ASCII representation with escape
-                            sequences for non-ASCII platforms */
-                         "\x73\x65\x6e\x64",
-#else
-                          "send",
-#endif
-                          CURL_ZERO_TERMINATED);
+    res = curl_mime_data(part, "send",
+                         CURL_ZERO_TERMINATED);
 
   if(res)
-    printf("curl_mime_xxx(4) = %s\n", curl_easy_strerror(res));
+    curl_mprintf("curl_mime_xxx(4) = %s\n", curl_easy_strerror(res));
 
   part = curl_mime_addpart(mime);
   if(!part) {
-    fprintf(stderr, "curl_mime_addpart(5) failed\n");
+    curl_mfprintf(stderr, "curl_mime_addpart(5) failed\n");
     curl_mime_free(mime);
     curl_easy_cleanup(curl);
     curl_global_cleanup();
@@ -230,7 +195,7 @@ static int once(char *URL, bool oldstyle)
     res = curl_mime_data(part, "blah blah", 9);
 
   if(res)
-    printf("curl_mime_xxx(5) = %s\n", curl_easy_strerror(res));
+    curl_mprintf("curl_mime_xxx(5) = %s\n", curl_easy_strerror(res));
 
   /* First set the URL that is about to receive our POST. */
   test_setopt(curl, CURLOPT_URL, URL);
@@ -258,7 +223,7 @@ test_cleanup:
   return res;
 }
 
-static int cyclic_add(void)
+static CURLcode t643_cyclic_add(void)
 {
   CURL *easy = curl_easy_init();
   curl_mime *mime = curl_mime_init(easy);
@@ -277,26 +242,26 @@ static int cyclic_add(void)
   curl_easy_cleanup(easy);
   if(a1 != CURLE_BAD_FUNCTION_ARGUMENT)
     /* that should have failed */
-    return 1;
+    return TEST_ERR_FAILURE;
 
-  return 0;
+  return CURLE_OK;
 }
 
-int test(char *URL)
+static CURLcode test_lib643(const char *URL)
 {
-  int res;
+  CURLcode res;
 
   if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
-    fprintf(stderr, "curl_global_init() failed\n");
+    curl_mfprintf(stderr, "curl_global_init() failed\n");
     return TEST_ERR_MAJOR_BAD;
   }
 
-  res = once(URL, TRUE); /* old */
+  res = t643_test_once(URL, TRUE); /* old */
   if(!res)
-    res = once(URL, FALSE); /* new */
+    res = t643_test_once(URL, FALSE); /* new */
 
   if(!res)
-    res = cyclic_add();
+    res = t643_cyclic_add();
 
   curl_global_cleanup();
 

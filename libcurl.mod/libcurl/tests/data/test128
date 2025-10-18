@@ -16,15 +16,15 @@ STOR
 <server>
 ftp
 </server>
- <name>
+<name>
 FTP upload with --crlf
- </name>
- <command>
-ftp://%HOSTIP:%FTPPORT/%TESTNUMBER -T log/upload%TESTNUMBER --crlf
+</name>
+<command>
+ftp://%HOSTIP:%FTPPORT/%TESTNUMBER -T %LOGDIR/upload%TESTNUMBER --crlf
 </command>
-<file name="log/upload%TESTNUMBER">
+<file name="%LOGDIR/upload%TESTNUMBER">
 file
-with unix newlines
+with Unix newlines
 meant to be
 converted
 with
@@ -46,7 +46,7 @@ QUIT
 </protocol>
 <upload>
 file
-with unix newlines
+with Unix newlines
 meant to be
 converted
 with

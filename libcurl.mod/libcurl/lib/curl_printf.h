@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,21 +20,35 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
+
+#include <curl/mprintf.h>
+
+#define MERR_OK        0
+#define MERR_MEM       1
+#define MERR_TOO_LARGE 2
+
+/* Lower-case digits.  */
+extern const unsigned char Curl_ldigits[];
+
+/* Upper-case digits.  */
+extern const unsigned char Curl_udigits[];
+
+#ifdef BUILDING_LIBCURL
 
 /*
  * This header should be included by ALL code in libcurl that uses any
  * *rintf() functions.
  */
 
-#include <curl/mprintf.h>
-
 # undef printf
 # undef fprintf
 # undef msnprintf
 # undef vprintf
 # undef vfprintf
-# undef vsnprintf
+# undef mvsnprintf
 # undef aprintf
 # undef vaprintf
 # define printf curl_mprintf
@@ -45,4 +59,6 @@
 # define mvsnprintf curl_mvsnprintf
 # define aprintf curl_maprintf
 # define vaprintf curl_mvaprintf
+
+#endif /* BUILDING_LIBCURL */
 #endif /* HEADER_CURL_PRINTF_H */

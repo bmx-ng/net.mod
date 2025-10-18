@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,25 +18,23 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
 #include "testtrace.h"
-#include "testutil.h"
-#include "warnless.h"
 #include "memdebug.h"
-
-#define TEST_HANG_TIMEOUT 60 * 1000
 
 /*
  * Get a single URL without select().
  */
 
-int test(char *URL)
+static CURLcode test_lib573(const char *URL)
 {
   CURL *c = NULL;
   CURLM *m = NULL;
-  int res = 0;
+  CURLcode res = CURLE_OK;
   int running = 1;
   double connect_time = 0.0;
   double dbl_epsilon;
@@ -55,9 +53,9 @@ int test(char *URL)
   easy_setopt(c, CURLOPT_HEADER, 1L);
   easy_setopt(c, CURLOPT_URL, URL);
 
-  libtest_debug_config.nohex = 1;
-  libtest_debug_config.tracetime = 1;
-  easy_setopt(c, CURLOPT_DEBUGDATA, &libtest_debug_config);
+  debug_config.nohex = TRUE;
+  debug_config.tracetime = TRUE;
+  easy_setopt(c, CURLOPT_DEBUGDATA, &debug_config);
   easy_setopt(c, CURLOPT_DEBUGFUNCTION, libtest_debug_cb);
   easy_setopt(c, CURLOPT_VERBOSE, 1L);
 
@@ -95,8 +93,8 @@ int test(char *URL)
 
   curl_easy_getinfo(c, CURLINFO_CONNECT_TIME, &connect_time);
   if(connect_time < dbl_epsilon) {
-    fprintf(stderr, "connect time %e is < epsilon %e\n",
-            connect_time, dbl_epsilon);
+    curl_mfprintf(stderr, "connect time %e is < epsilon %e\n",
+                  connect_time, dbl_epsilon);
     res = TEST_ERR_MAJOR_BAD;
   }
 

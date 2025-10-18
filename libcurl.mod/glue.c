@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2007-2022 Bruce A Henderson
+ Copyright (c) 2007-2025 Bruce A Henderson
  
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
@@ -169,4 +169,28 @@ void bmx_curl_easy_setopt_slist(CURL *curl, CURLoption option, struct curl_slist
 
 void bmx_curl_multi_setopt_int(CURLM * multi, CURLMoption option, int value) {
 	curl_multi_setopt(multi, option, value);
+}
+
+CURLUcode bmx_curl_url_set(CURLU * handle, CURLUPart part, BBString * content, unsigned int flags) {
+	unsigned char * c = (unsigned char*)bbStringToUTF8String(content);
+	CURLUcode res = curl_url_set(handle, part, c, flags);
+	bbMemFree(c);
+	return res;
+}
+
+CURLUcode bmx_curl_url_get(CURLU * handle, CURLUPart part, BBString ** content, unsigned int flags) {
+	char * c = NULL;
+	CURLUcode res = curl_url_get(handle, part, &c, flags);
+	if (c) {
+		*content = bbStringFromUTF8String((unsigned char*)c);
+		curl_free(c);
+	} else {
+		*content = &bbEmptyString;
+	}
+	return res;
+}
+
+BBString * bmx_curl_url_strerror(CURLUcode code) {
+	const char * c = curl_url_strerror(code);
+	return bbStringFromUTF8String((unsigned char*)c);
 }

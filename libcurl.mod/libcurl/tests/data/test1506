@@ -51,11 +51,11 @@ http
 <tool>
 lib%TESTNUMBER
 </tool>
- <name>
+<name>
 HTTP GET connection cache limit (CURLMOPT_MAXCONNECTS)
- </name>
- <command>
-http://%HOSTIP:%HTTPPORT/path/%TESTNUMBER %HOSTIP %HTTPPORT
+</name>
+<command>
+- %HOSTIP %HTTPPORT
 </command>
 </client>
 
@@ -82,15 +82,14 @@ Accept: */*
 <strip>
 ^Host:.*
 </strip>
-<file name="log/stderr%TESTNUMBER" mode="text">
-* Connection #0 to host server1.example.com left intact
-* Connection #1 to host server2.example.com left intact
-* Connection #2 to host server3.example.com left intact
-* Closing connection 0
-* Connection #3 to host server4.example.com left intact
+<file name="%LOGDIR/stderr%TESTNUMBER" mode="text">
+* Connection #0 to host server1.example.com:%HTTPPORT left intact
+* Connection #1 to host server2.example.com:%HTTPPORT left intact
+* Connection #2 to host server3.example.com:%HTTPPORT left intact
+* Connection #3 to host server4.example.com:%HTTPPORT left intact
 </file>
 <stripfile>
-$_ = '' if (($_ !~ /left intact/) && ($_ !~ /Closing connection/))
+$_ = '' if(($_ !~ /left intact/) && ($_ !~ /Closing connection/))
 </stripfile>
 </verify>
 </testcase>

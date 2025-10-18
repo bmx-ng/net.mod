@@ -10,15 +10,12 @@ hash
 #
 # Client-side
 <client>
-<server>
-none
-</server>
 <features>
 unittest
 </features>
- <name>
+<name>
 internal hash create/destroy testing
- </name>
+</name>
 <command>
 %TESTNUMBER
 </command>

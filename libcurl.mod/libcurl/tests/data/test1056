@@ -42,17 +42,23 @@ body
 #
 # Client-side
 <client>
+# This test relies on the IPv6 scope field being ignored when connecting to
+# ipv6-localhost (i.e. [::1%259999] is treated as [::1]). Maybe this is a bit
+# dodgy, but it happens on all our test platforms but Windows so skip this
+# test there. Not supported on the Windows kernel, this includes MSYS2/Cygwin.
 <features>
-ipv6
+IPv6
+!cygwin
+!win32
 </features>
 <server>
 http
 http-ipv6
 </server>
- <name>
+<name>
 HTTP follow redirect from IPv4 to IPv6 with scope
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/we/are/all/twits/%TESTNUMBER -L
 </command>
 </client>

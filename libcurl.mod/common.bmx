@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2022 Bruce A Henderson
+' Copyright (c) 2007-2025 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -98,6 +98,22 @@ End Extern
 Type TSList
 	Field slist:SCurlSlist Ptr
 	Field count:Int
+
+	Method Append:Int(txt:String)
+		Local ctxt:Byte Ptr = txt.ToUTF8String()
+		Local tmp:SCurlSlist Ptr = curl_slist_append(slist, ctxt)
+		MemFree(ctxt)
+		If tmp Then
+			slist = tmp
+			count :+ 1
+			Return True
+		Else
+			curl_slist_free_all(slist)
+			slist = Null
+			count = 0
+			Return False
+		End If
+	End Method
 End Type
 
 Struct SCurlSlist

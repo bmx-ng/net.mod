@@ -108,6 +108,43 @@ AC_DEFUN([AM_AUX_DIR_EXPAND],
 am_aux_dir=`cd "$ac_aux_dir" && pwd`
 ])
 
+# AM_COND_IF                                            -*- Autoconf -*-
+
+# Copyright (C) 2008-2021 Free Software Foundation, Inc.
+#
+# This file is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# _AM_COND_IF
+# _AM_COND_ELSE
+# _AM_COND_ENDIF
+# --------------
+# These macros are only used for tracing.
+m4_define([_AM_COND_IF])
+m4_define([_AM_COND_ELSE])
+m4_define([_AM_COND_ENDIF])
+
+# AM_COND_IF(COND, [IF-TRUE], [IF-FALSE])
+# ---------------------------------------
+# If the shell condition COND is true, execute IF-TRUE, otherwise execute
+# IF-FALSE.  Allow automake to learn about conditional instantiating macros
+# (the AC_CONFIG_FOOS).
+AC_DEFUN([AM_COND_IF],
+[m4_ifndef([_AM_COND_VALUE_$1],
+	   [m4_fatal([$0: no such condition "$1"])])dnl
+_AM_COND_IF([$1])dnl
+if test -z "$$1_TRUE"; then :
+  m4_n([$2])[]dnl
+m4_ifval([$3],
+[_AM_COND_ELSE([$1])dnl
+else
+  $3
+])dnl
+_AM_COND_ENDIF([$1])dnl
+fi[]dnl
+])
+
 # AM_CONDITIONAL                                            -*- Autoconf -*-
 
 # Copyright (C) 1997-2021 Free Software Foundation, Inc.
@@ -1184,22 +1221,17 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
-m4_include([m4/ax_compile_check_sizeof.m4])
 m4_include([m4/curl-amissl.m4])
-m4_include([m4/curl-bearssl.m4])
 m4_include([m4/curl-compilers.m4])
 m4_include([m4/curl-confopts.m4])
 m4_include([m4/curl-functions.m4])
 m4_include([m4/curl-gnutls.m4])
 m4_include([m4/curl-mbedtls.m4])
-m4_include([m4/curl-mesalink.m4])
-m4_include([m4/curl-nss.m4])
 m4_include([m4/curl-openssl.m4])
 m4_include([m4/curl-override.m4])
 m4_include([m4/curl-reentrant.m4])
 m4_include([m4/curl-rustls.m4])
 m4_include([m4/curl-schannel.m4])
-m4_include([m4/curl-sectransp.m4])
 m4_include([m4/curl-sysconfig.m4])
 m4_include([m4/curl-wolfssl.m4])
 m4_include([m4/libtool.m4])
@@ -1210,7 +1242,6 @@ m4_include([m4/lt~obsolete.m4])
 m4_include([m4/xc-am-iface.m4])
 m4_include([m4/xc-cc-check.m4])
 m4_include([m4/xc-lt-iface.m4])
-m4_include([m4/xc-translit.m4])
 m4_include([m4/xc-val-flgs.m4])
 m4_include([m4/zz40-xc-ovr.m4])
 m4_include([m4/zz50-xc-ovr.m4])

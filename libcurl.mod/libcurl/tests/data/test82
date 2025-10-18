@@ -31,10 +31,10 @@ proxy
 <server>
 http
 </server>
- <name>
+<name>
 HTTP with proxy requiring NTLM, but we send Basic
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER --proxy-user testuser:testpass -x http://%HOSTIP:%HTTPPORT
 </command>
 </client>
@@ -44,7 +44,7 @@ http://%HOSTIP:%HTTPPORT/%TESTNUMBER --proxy-user testuser:testpass -x http://%H
 <protocol>
 GET http://%HOSTIP:%HTTPPORT/%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPPORT
-Proxy-Authorization: Basic dGVzdHVzZXI6dGVzdHBhc3M=
+Proxy-Authorization: Basic %b64[testuser:testpass]b64%
 User-Agent: curl/%VERSION
 Accept: */*
 Proxy-Connection: Keep-Alive

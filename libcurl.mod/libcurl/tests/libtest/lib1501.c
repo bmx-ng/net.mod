@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,26 +18,23 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
-#include <fcntl.h>
-
-#include "testutil.h"
-#include "warnless.h"
 #include "memdebug.h"
 
-#define TEST_HANG_TIMEOUT 30 * 1000
-
-/* 500 milliseconds allowed. An extreme number but lets be really conservative
-   to allow old and slow machines to run this test too */
-#define MAX_BLOCKED_TIME_MS 500
-
-int test(char *URL)
+static CURLcode test_lib1501(const char *URL)
 {
+  static const long HANG_TIMEOUT = 30 * 1000;
+  /* 500 milliseconds allowed. An extreme number but lets be really
+     conservative to allow old and slow machines to run this test too */
+  static const int MAX_BLOCKED_TIME_MS = 500;
+
   CURL *handle = NULL;
   CURLM *mhandle = NULL;
-  int res = 0;
+  CURLcode res = CURLE_OK;
   int still_running = 0;
 
   start_test_timing();
@@ -55,7 +52,7 @@ int test(char *URL)
 
   multi_perform(mhandle, &still_running);
 
-  abort_on_test_timeout();
+  abort_on_test_timeout_custom(HANG_TIMEOUT);
 
   while(still_running) {
     struct timeval timeout;
@@ -63,9 +60,9 @@ int test(char *URL)
     fd_set fdwrite;
     fd_set fdexcep;
     int maxfd = -99;
-    struct timeval before;
-    struct timeval after;
-    long e;
+    struct curltime before;
+    struct curltime after;
+    timediff_t e;
 
     timeout.tv_sec = 0;
     timeout.tv_usec = 100000L; /* 100 ms */
@@ -80,21 +77,21 @@ int test(char *URL)
 
     select_test(maxfd + 1, &fdread, &fdwrite, &fdexcep, &timeout);
 
-    abort_on_test_timeout();
+    abort_on_test_timeout_custom(HANG_TIMEOUT);
 
-    fprintf(stderr, "ping\n");
-    before = tutil_tvnow();
+    curl_mfprintf(stderr, "ping\n");
+    before = curlx_now();
 
     multi_perform(mhandle, &still_running);
 
-    abort_on_test_timeout();
+    abort_on_test_timeout_custom(HANG_TIMEOUT);
 
-    after = tutil_tvnow();
-    e = tutil_tvdiff(after, before);
-    fprintf(stderr, "pong = %ld\n", e);
+    after = curlx_now();
+    e = curlx_timediff(after, before);
+    curl_mfprintf(stderr, "pong = %ld\n", (long)e);
 
     if(e > MAX_BLOCKED_TIME_MS) {
-      res = 100;
+      res = CURLE_TOO_LARGE;
       break;
     }
   }

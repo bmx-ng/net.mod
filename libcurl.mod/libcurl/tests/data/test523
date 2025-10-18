@@ -34,11 +34,11 @@ http
 <tool>
 lib%TESTNUMBER
 </tool>
- <name>
+<name>
 HTTP GET with proxy and CURLOPT_PORT
- </name>
+</name>
 # first URL then proxy
- <command>
+<command>
 http://www.example.com:999/%TESTNUMBER http://%HOSTIP:%HTTPPORT
 </command>
 <features>
@@ -52,7 +52,7 @@ proxy
 <protocol>
 GET http://www.example.com:19999/%TESTNUMBER HTTP/1.1
 Host: www.example.com:19999
-Authorization: Basic eHh4Onl5eQ==
+Authorization: Basic %b64[xxx:yyy]b64%
 Accept: */*
 Proxy-Connection: Keep-Alive
 

@@ -28,10 +28,11 @@ SSL
 <server>
 https
 </server>
- <name>
+<name>
 simple HTTPS GET
- </name>
- <command>
+</name>
+# Using '-k' over '--insecure' to also test the short form
+<command>
 -k https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
 </command>
 </client>
