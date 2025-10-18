@@ -30,6 +30,7 @@ Import Pub.zlib
 Import Net.mbedtls
 
 Import "../mbedtls.mod/mbedtls/include/*.h"
+Import "../../archive.mod/zlib.mod/zlib/*.h"
 
 ?win32
 Import "include_win32/*.h"

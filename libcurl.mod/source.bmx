@@ -158,6 +158,8 @@ Import "libcurl/lib/ws.c"
 
 Import "libcurl/lib/curlx/base64.c"
 Import "libcurl/lib/curlx/dynbuf.c"
+Import "libcurl/lib/curlx/inet_ntop.c"
+Import "libcurl/lib/curlx/inet_pton.c"
 Import "libcurl/lib/curlx/nonblock.c"
 Import "libcurl/lib/curlx/strparse.c"
 Import "libcurl/lib/curlx/timediff.c"
