@@ -19,6 +19,7 @@ Import Net.mbedtlscrypto
 
 ?win32
 Import "-lws2_32"
+Import "-lbcrypt"
 ?
 
 Import "source.bmx"
