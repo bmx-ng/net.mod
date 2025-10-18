@@ -2922,3 +2922,83 @@ Rem
 bbdoc: SSL for all communication or fail
 End Rem
 Const CURLUSESSL_ALL:Int = 3
+
+Rem
+bbdoc: Returns default port number
+End Rem
+Const CURLU_DEFAULT_PORT:Int = 1 Shl 0
+
+Rem
+bbdoc: Acts as if no port number was set, if the port number matches the default for the scheme
+End Rem
+Const CURLU_NO_DEFAULT_PORT:Int = 1 Shl 1
+
+Rem
+bbdoc: Returns default scheme if missing
+End Rem
+Const CURLU_DEFAULT_SCHEME:Int = 1 Shl 2
+
+Rem
+bbdoc: Allows non-supported scheme
+End Rem
+Const CURLU_NON_SUPPORT_SCHEME:Int = 1 Shl 3
+
+Rem
+bbdoc: Leaves dot sequences
+End Rem
+Const CURLU_PATH_AS_IS:Int = 1 Shl 4
+
+Rem
+bbdoc: No user+password allowed
+End Rem
+Const CURLU_DISALLOW_USER:Int = 1 Shl 5
+
+Rem
+bbdoc: URL decode on get
+End Rem
+Const CURLU_URLDECODE:Int = 1 Shl 6
+
+Rem
+bbdoc: URL encode on set
+End Rem
+Const CURLU_URLENCODE:Int = 1 Shl 7
+
+Rem
+bbdoc: Appends a form style part
+End Rem
+Const CURLU_APPENDQUERY:Int = 1 Shl 8
+
+Rem
+bbdoc: Legacy curl-style guessing
+End Rem
+Const CURLU_GUESS_SCHEME:Int = 1 Shl 9
+
+Rem
+bbdoc: Allows empty authority when the scheme is unknown.
+End Rem
+Const CURLU_NO_AUTHORITY:Int = 1 Shl 10
+
+Rem
+bbdoc: Allows spaces in the URL
+End Rem
+Const CURLU_ALLOW_SPACE:Int = 1 Shl 11
+
+Rem
+bbdoc: Gets the hostname in punycode
+End Rem
+Const CURLU_PUNYCODE:Int = 1 Shl 12
+
+Rem
+bbdoc: Punycode => IDN conversion
+End Rem
+Const CURLU_PUNY2IDN:Int = 1 Shl 13
+
+Rem
+bbdoc: Allows empty queries and fragments when extracting the URL or the components
+End Rem
+Const CURLU_GET_EMPTY:Int = 1 Shl 14
+
+Rem
+bbdoc: For get, do not accept a guess
+End Rem
+Const CURLU_NO_GUESS_SCHEME:Int = 1 Shl 15
