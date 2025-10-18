@@ -1036,6 +1036,11 @@ cleanup:
     return (*ctx == NULL) ? -1 : 0;
 }
 
+/* Force-expose internal mbedTLS function */
+#if MBEDTLS_VERSION_NUMBER >= 0x03060000
+int mbedtls_pk_load_file(const char *path, unsigned char **buf, size_t *n);
+#endif
+
 /* _libssh2_ecdsa_new_private
  *
  * Creates a new private key given a file path and password
