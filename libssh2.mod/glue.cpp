@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2009-2022 Bruce A Henderson
+ Copyright (c) 2009-2025 Bruce A Henderson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -195,7 +195,7 @@ int bmx_libssh2_userauth_authenticated(MaxSSHSession * session) {
 // ***************************************************
 
 BBString * bmx_libssh2_kbdint_prompt_gettext(LIBSSH2_USERAUTH_KBDINT_PROMPT * prompt) {
-	return bbStringFromCString(prompt->text);
+	return bbStringFromUTF8String((unsigned char *)prompt->text);
 }
 
 int bmx_libssh2_kbdint_prompt_echo(LIBSSH2_USERAUTH_KBDINT_PROMPT * prompt) {

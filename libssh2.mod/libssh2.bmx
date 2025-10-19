@@ -1,4 +1,4 @@
-' Copyright (c) 2009-2022 Bruce A Henderson
+' Copyright (c) 2009-2025 Bruce A Henderson
 ' All rights reserved.
 '
 ' Redistribution and use in source and binary forms, with or without
@@ -31,11 +31,13 @@ bbdoc: Libssh2
 End Rem
 Module Net.libssh2
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "License: BSD"
-ModuleInfo "Copyright: Wrapper - 2009-2022 Bruce A Henderson"
+ModuleInfo "Copyright: Wrapper - 2009-2025 Bruce A Henderson"
 
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: Update to libssh2 1.11.0"
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Linux build fixes."
 ModuleInfo "History: 1.03"
@@ -51,6 +53,7 @@ ModuleInfo "History: Initial Release."
 
 
 ModuleInfo "CC_OPTS: -DLIBSSH2_MBEDTLS"
+ModuleInfo "CC_OPTS: -DHAVE_CONFIG_H"
 
 Import BRL.Socket
 Import "common.bmx"

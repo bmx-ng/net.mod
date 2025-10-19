@@ -1,4 +1,4 @@
-' Copyright (c) 2009-2022 Bruce A Henderson
+' Copyright (c) 2009-2025 Bruce A Henderson
 ' All rights reserved.
 '
 ' Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,12 @@ Import "libssh2/include/*.h"
 Import "libssh2/src/agent.c"
 Import "libssh2/src/bcrypt_pbkdf.c"
 Import "libssh2/src/blowfish.c"
+Import "libssh2/src/chacha.c"
 Import "libssh2/src/channel.c"
+Import "libssh2/src/cipher-chachapoly.c"
 Import "libssh2/src/comp.c"
 Import "libssh2/src/crypt.c"
+Import "libssh2/src/crypto.c"
 Import "libssh2/src/global.c"
 Import "libssh2/src/hostkey.c"
 Import "libssh2/src/keepalive.c"
@@ -53,17 +56,18 @@ Import "libssh2/src/kex.c"
 Import "libssh2/src/knownhost.c"
 Import "libssh2/src/libgcrypt.c"
 Import "libssh2/src/mac.c"
-Import "libssh2/src/mbedtls.c"
 Import "libssh2/src/misc.c"
 Import "libssh2/src/openssl.c"
 Import "libssh2/src/packet.c"
 Import "libssh2/src/pem.c"
+Import "libssh2/src/poly1305.c"
 Import "libssh2/src/publickey.c"
 Import "libssh2/src/scp.c"
 Import "libssh2/src/session.c"
 Import "libssh2/src/sftp.c"
 Import "libssh2/src/transport.c"
 Import "libssh2/src/userauth.c"
+Import "libssh2/src/userauth_kbd_packet.c"
 Import "libssh2/src/version.c"
 Import "libssh2/src/wincng.c"
 

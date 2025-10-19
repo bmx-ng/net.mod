@@ -200,6 +200,9 @@ Import "libcurl/lib/vtls/wolfssl.c"
 
 Import "libcurl/lib/vquic/vquic.c"
 
+Import "libcurl/lib/vssh/curl_path.c"
+Import "libcurl/lib/vssh/libssh2.c"
+
 ' ares
 rem
 Import "c-ares/src/lib/ares__addrinfo2hostent.c"
