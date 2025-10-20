@@ -478,11 +478,21 @@ End Rem
 Const CURLOPT_POST:Int = CURLOPTTYPE_LONG + 47
 
 Rem
-bbdoc: A non-zero value tells the library to just list the names of an ftp directory, instead of doing a full directory listing that would include file sizes, dates etc.
-about:  This causes an FTP NLST command to be sent. Beware that some FTP servers list only files in their
-response to NLST; they might not include subdirectories and symbolic links.
+bbdoc: For FTP and SFTP based URLs a parameter set to 1 tells the library to list the names of files in a directory, rather than performing a full directory listing that would normally include file sizes, dates etc.
+about: For POP3 a parameter of 1 tells the library to list the email message or messages on the POP3 server.
+This can be used to change the default behavior of libcurl, when combined with a URL that contains a message ID,
+to perform a "scan listing" which can then be used to determine the size of an email.
+
+For FILE, this option has no effect yet as directories are always listed in this mode.
+
+Note: For FTP this causes a NLST command to be sent to the FTP server. Beware that some FTP servers list only files in their response
+to NLST; they might not include subdirectories and symbolic links.
+
+Setting this option to 1 also implies a directory listing even if the URL does not end with a slash, which otherwise is necessary.
+
+Do not use this option if you also use CURLOPT_WILDCARDMATCH as it effectively breaks that feature.
 End Rem
-Const CURLOPT_FTPLISTONLY:Int = CURLOPTTYPE_LONG + 48
+Const CURLOPT_DIRLISTONLY:Int = CURLOPTTYPE_LONG + 48
 
 Rem
 bbdoc: A non-zero value tells the library to append to the remote file instead of overwrite it.
@@ -1490,7 +1500,12 @@ End Rem
 Const CURLOPT_INTERLEAVEFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 196
 
 Rem
-bbdoc: Turn on wildcard matching 
+bbdoc: Set to 1 if you want to transfer multiple files according to a filename pattern.
+about: The pattern can be specified as part of the #CURLOPT_URL option, using an fnmatch-like pattern
+(Shell Pattern Matching) in the last part of URL (filename).
+
+By default, libcurl uses its internal wildcard matching implementation. You can provide your own matching function by
+the #CURLOPT_FNMATCH_FUNCTION option.
 End Rem
 Const CURLOPT_WILDCARDMATCH:Int = CURLOPTTYPE_LONG + 197
 

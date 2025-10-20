@@ -22,7 +22,7 @@ curl.cleanup()
 
 Print curl.toString()
 
-Function progressCallback:Int(data:Object, dltotal:Double, dlnow:Double, ultotal:Double, ulnow:Double)
+Function progressCallback:Int(data:Object, dltotal:Long, dlnow:Long, ultotal:Long, ulnow:Long)
 	Print " ++++ " + dlnow + " bytes"
 	Return 0	
 End Function
