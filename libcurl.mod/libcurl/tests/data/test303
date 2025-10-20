@@ -4,6 +4,7 @@
 HTTPS
 HTTP GET
 timeout
+FAILURE
 </keywords>
 </info>
 
@@ -29,11 +30,14 @@ SSL
 <server>
 https
 </server>
- <name>
+<killserver>
+https
+</killserver>
+<name>
 HTTPS with 8 secs timeout
- </name>
- <command>
--k https://%HOSTIP:%HTTPSPORT/want/%TESTNUMBER -m 8
+</name>
+<command>
+--insecure https://%HOSTIP:%HTTPSPORT/want/%TESTNUMBER -m 8
 </command>
 </client>
 

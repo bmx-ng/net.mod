@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,10 +18,10 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
-#include "test.h"
-
-#include <string.h>
+#include "first.h"
 
 /*
  * This test uses these funny custom memory callbacks for the only purpose
@@ -67,10 +67,10 @@ static void custom_free(void *ptr)
 }
 
 
-int test(char *URL)
+static CURLcode test_lib509(const char *URL)
 {
-  unsigned char a[] = {0x2f, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
-                       0x91, 0xa2, 0xb3, 0xc4, 0xd5, 0xe6, 0xf7};
+  static const unsigned char a[] = {0x2f, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+                                    0x91, 0xa2, 0xb3, 0xc4, 0xd5, 0xe6, 0xf7};
   CURLcode res;
   CURL *curl;
   int asize;
@@ -84,13 +84,13 @@ int test(char *URL)
                              custom_strdup,
                              custom_calloc);
   if(res != CURLE_OK) {
-    fprintf(stderr, "curl_global_init_mem() failed\n");
+    curl_mfprintf(stderr, "curl_global_init_mem() failed\n");
     return TEST_ERR_MAJOR_BAD;
   }
 
   curl = curl_easy_init();
   if(!curl) {
-    fprintf(stderr, "curl_easy_init() failed\n");
+    curl_mfprintf(stderr, "curl_easy_init() failed\n");
     curl_global_cleanup();
     return TEST_ERR_MAJOR_BAD;
   }
@@ -98,10 +98,10 @@ int test(char *URL)
   test_setopt(curl, CURLOPT_USERAGENT, "test509"); /* uses strdup() */
 
   asize = (int)sizeof(a);
-  str = curl_easy_escape(curl, (char *)a, asize); /* uses realloc() */
+  str = curl_easy_escape(curl, (const char *)a, asize); /* uses realloc() */
 
   if(seen)
-    printf("Callbacks were invoked!\n");
+    curl_mprintf("Callbacks were invoked!\n");
 
 test_cleanup:
 
@@ -111,5 +111,5 @@ test_cleanup:
   curl_easy_cleanup(curl);
   curl_global_cleanup();
 
-  return (int)res;
+  return res;
 }

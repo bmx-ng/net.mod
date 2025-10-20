@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,16 +18,12 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
-#include "test.h"
+#include "first.h"
 
-#include <limits.h>
-
-#include "testutil.h"
-#include "warnless.h"
 #include "memdebug.h"
-
-#define TEST_HANG_TIMEOUT 5 * 1000
 
 /*
  * Test case for below scenario:
@@ -38,11 +34,11 @@
  * with function curl_multi_info_read().
  */
 
-int test(char *URL)
+static CURLcode test_lib597(const char *URL)
 {
   CURL *easy = NULL;
   CURLM *multi = NULL;
-  int res = 0;
+  CURLcode res = CURLE_OK;
   int running;
   int msgs_left;
   CURLMsg *msg;
@@ -94,12 +90,17 @@ int test(char *URL)
        -1. */
 
     if(timeout != -1L) {
-      int itimeout = (timeout > (long)INT_MAX) ? INT_MAX : (int)timeout;
+      int itimeout;
+#if LONG_MAX > INT_MAX
+      itimeout = (timeout > (long)INT_MAX) ? INT_MAX : (int)timeout;
+#else
+      itimeout = (int)timeout;
+#endif
       interval.tv_sec = itimeout/1000;
       interval.tv_usec = (itimeout%1000)*1000;
     }
     else {
-      interval.tv_sec = TEST_HANG_TIMEOUT/1000 + 1;
+      interval.tv_sec = TEST_HANG_TIMEOUT/1000 - 1;
       interval.tv_usec = 0;
     }
 

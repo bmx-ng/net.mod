@@ -54,11 +54,12 @@ http
 <features>
 !SSPI
 crypto
+digest
 </features>
- <name>
+<name>
 HTTP with Digest authorization
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER -u testuser:testpass --digest
 </command>
 </client>

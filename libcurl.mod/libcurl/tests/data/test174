@@ -9,7 +9,7 @@ HTTP POST
 # Server-side
 <reply>
 <data>
-HTTP/1.1 200 beng swsclose
+HTTP/1.1 200 foobar swsclose
 Server: Microsoft-IIS/6.0
 Authentication-Info: Passport1.4 tname=MSPAuth,tname=MSPProf,tname=MSPConsent,tname=MSPSecAuth
 Content-Type: text/html; charset=iso-8859-1
@@ -21,14 +21,14 @@ This is not the real page
 
 # Client-side
 <client>
-# 
+#
 <server>
 http
 </server>
- <name>
+<name>
 HTTP POST --anyauth to server not requiring any auth at all
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER -u testuser:testpass --anyauth -d "junkelijunk"
 </command>
 </client>

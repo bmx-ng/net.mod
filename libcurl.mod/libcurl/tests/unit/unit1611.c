@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -18,26 +18,20 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
-#include "curlcheck.h"
+#include "unitcheck.h"
 
 #include "curl_md4.h"
 
-static CURLcode unit_setup(void)
+static CURLcode test_unit1611(const char *arg)
 {
-  return CURLE_OK;
-}
+  UNITTEST_BEGIN_SIMPLE
 
-static void unit_stop(void)
-{
-
-}
-
-UNITTEST_START
-
-#ifndef CURL_DISABLE_CRYPTO_AUTH
-  const char string1[] = "1";
-  const char string2[] = "hello-you-fool";
+#ifdef USE_CURL_NTLM_CORE
+  static const char string1[] = "1";
+  static const char string2[] = "hello-you-fool";
   unsigned char output[MD4_DIGEST_LENGTH];
   unsigned char *testp = output;
 
@@ -54,5 +48,5 @@ UNITTEST_START
                 "\x0b", MD4_DIGEST_LENGTH);
 #endif
 
-
-UNITTEST_STOP
+  UNITTEST_END_SIMPLE
+}

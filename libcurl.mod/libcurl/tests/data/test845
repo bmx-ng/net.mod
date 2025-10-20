@@ -16,7 +16,7 @@ RFC7628
 <servercmd>
 AUTH OAUTHBEARER
 CAPA SASL-IR
-REPLY AUTHENTICATE + eyJzdGF0dXMiOiJpbnZhbGlkX3Rva2VuIiwic2NvcGUiOiJleGFtcGxlX3Njb3BlIiwib3BlbmlkLWNvbmZpZ3VyYXRpb24iOiJodHRwczovL2V4YW1wbGUuY29tLy53ZWxsLWtub3duL29wZW5pZC1jb25maWd1cmF0aW9uIn0=
+REPLY AUTHENTICATE + %b64[{"status":"invalid_token","scope":"example_scope","openid-configuration":"https://example.com/.well-known/openid-configuration"}]b64%
 REPLY AQ== A002 NO Authentication failed
 </servercmd>
 </reply>
@@ -27,10 +27,10 @@ REPLY AQ== A002 NO Authentication failed
 <server>
 imap
 </server>
- <name>
+<name>
 IMAP OAuth 2.0 (OAUTHBEARER) failure as continuation with initial response
- </name>
- <command>
+</name>
+<command>
 'imap://%HOSTIP:%IMAPPORT/%TESTNUMBER/;MAILINDEX=1' -u user --oauth2-bearer mF_9.B5f-4.1JqM
 </command>
 </client>

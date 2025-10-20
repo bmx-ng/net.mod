@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2020, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 /*
@@ -30,22 +32,20 @@
 /* We're willing to wait a very generous two seconds for the removal.  This is
    as low as we can go while still easily supporting SIGALRM timing for the
    non-threaded blocking resolver.  It doesn't matter that much because when
-   the test passes, we never wait this long. */
-#define TEST_HANG_TIMEOUT 2 * 1000
+   the test passes, we never wait this long. We set it much higher via
+   the default TEST_HANG_TIMEOUT to avoid issues when running on overloaded
+   CI machines. */
 
-#include "test.h"
-#include "testutil.h"
+#include "first.h"
 
-#include <sys/stat.h>
-
-int test(char *URL)
+static CURLcode test_lib1592(const char *URL)
 {
   int stillRunning;
   CURLM *multiHandle = NULL;
   CURL *curl = NULL;
   CURLcode res = CURLE_OK;
   CURLMcode mres;
-  int timeout;
+  long timeout;
 
   global_init(CURL_GLOBAL_ALL);
 
@@ -76,9 +76,9 @@ int test(char *URL)
        all because we haven't been able to configure the resolver to use an
        non-responsive DNS server.  At least we exercise the flow.
        */
-    fprintf(stderr,
-            "CURLOPT_DNS_SERVERS not supported; "
-            "assuming curl_multi_remove_handle() will block\n");
+    curl_mfprintf(stderr,
+                  "CURLOPT_DNS_SERVERS not supported; "
+                  "assuming curl_multi_remove_handle() will block\n");
     timeout = TEST_HANG_TIMEOUT / 2;
   }
 
@@ -91,21 +91,21 @@ int test(char *URL)
   multi_add_handle(multiHandle, curl);
 
   /* This should move the handle from INIT => CONNECT => WAITRESOLVE. */
-  fprintf(stderr, "curl_multi_perform()...\n");
+  curl_mfprintf(stderr, "curl_multi_perform()...\n");
   multi_perform(multiHandle, &stillRunning);
-  fprintf(stderr, "curl_multi_perform() succeeded\n");
+  curl_mfprintf(stderr, "curl_multi_perform() succeeded\n");
 
   /* Start measuring how long it takes to remove the handle. */
-  fprintf(stderr, "curl_multi_remove_handle()...\n");
+  curl_mfprintf(stderr, "curl_multi_remove_handle()...\n");
   start_test_timing();
   mres = curl_multi_remove_handle(multiHandle, curl);
   if(mres) {
-    fprintf(stderr, "curl_multi_remove_handle() failed, "
-            "with code %d\n", (int)res);
+    curl_mfprintf(stderr,
+                  "curl_multi_remove_handle() failed, with code %d\n", mres);
     res = TEST_ERR_MULTI;
     goto test_cleanup;
   }
-  fprintf(stderr, "curl_multi_remove_handle() succeeded\n");
+  curl_mfprintf(stderr, "curl_multi_remove_handle() succeeded\n");
 
   /* Fail the test if it took too long to remove.  This happens after the fact,
      and says "it seems that it would have run forever", which isn't true, but
@@ -117,5 +117,5 @@ test_cleanup:
   curl_multi_cleanup(multiHandle);
   curl_global_cleanup();
 
-  return (int)res;
+  return res;
 }

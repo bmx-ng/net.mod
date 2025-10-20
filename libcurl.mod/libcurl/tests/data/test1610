@@ -9,14 +9,11 @@ SHA256
 #
 # Client-side
 <client>
-<server>
-none
-</server>
 <features>
 unittest
 </features>
- <name>
+<name>
 SHA256 unit tests
- </name>
+</name>
 </client>
 </testcase>

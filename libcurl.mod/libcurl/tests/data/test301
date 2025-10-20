@@ -29,11 +29,11 @@ SSL
 <server>
 https
 </server>
- <name>
+<name>
 HTTPS GET with user and password
- </name>
- <command>
--k -u fake:user https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
+</name>
+<command>
+--insecure -u fake:user https://%HOSTIP:%HTTPSPORT/%TESTNUMBER
 </command>
 </client>
 
@@ -43,7 +43,7 @@ HTTPS GET with user and password
 <protocol>
 GET /%TESTNUMBER HTTP/1.1
 Host: %HOSTIP:%HTTPSPORT
-Authorization: Basic ZmFrZTp1c2Vy
+Authorization: Basic %b64[fake:user]b64%
 User-Agent: curl/%VERSION
 Accept: */*
 

@@ -1,5 +1,5 @@
 ' 
-' Copyright 2018-2023 Bruce A Henderson
+' Copyright 2018-2025 Bruce A Henderson
 ' 
 ' Licensed under the Apache License, Version 2.0 (the "License");
 ' you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ Import Net.mbedtlscrypto
 
 ?win32
 Import "-lws2_32"
+Import "-lbcrypt"
 ?
 
 Import "source.bmx"

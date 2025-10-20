@@ -37,16 +37,15 @@ verify
 <client>
 <features>
 SSL
-!hyper
 </features>
 <server>
 https
 </server>
- <name>
+<name>
 HTTPS GET, receive no headers only data!
- </name>
- <command>
--k https://%HOSTIP:%HTTPSPORT/%TESTNUMBER --http0.9
+</name>
+<command>
+--insecure https://%HOSTIP:%HTTPSPORT/%TESTNUMBER --http0.9
 </command>
 </client>
 

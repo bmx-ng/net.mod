@@ -960,7 +960,7 @@
 /* #undef USE_LIBSSH */
 
 /* if libSSH2 is in use */
-/* #undef USE_LIBSSH2 */
+#define USE_LIBSSH2 1
 
 /* If you want to build curl with the built-in manual */
 #define USE_MANUAL 1

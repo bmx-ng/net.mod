@@ -12,13 +12,10 @@ HTTP GET
 <features>
 Schannel
 </features>
-<server>
-none
-</server>
- <name>
+<name>
 Disable certificate revocation checks
- </name>
- <command>
+</name>
+<command>
 --ssl-no-revoke -I https://revoked.badssl.com/
 </command>
 </client>

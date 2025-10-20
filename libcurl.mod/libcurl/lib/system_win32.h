@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2016 - 2020, Steve Holme, <steve_holme@hotmail.com>.
+ * Copyright (C) Steve Holme, <steve_holme@hotmail.com>.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -20,11 +20,15 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
+ * SPDX-License-Identifier: curl
+ *
  ***************************************************************************/
 
 #include "curl_setup.h"
 
-#if defined(WIN32)
+#ifdef _WIN32
+
+#include <curl/curl.h>
 
 extern LARGE_INTEGER Curl_freq;
 extern bool Curl_isVistaOrGreater;
@@ -32,15 +36,15 @@ extern bool Curl_isVistaOrGreater;
 CURLcode Curl_win32_init(long flags);
 void Curl_win32_cleanup(long init_flags);
 
+#ifndef HAVE_IF_NAMETOINDEX
 /* We use our own typedef here since some headers might lack this */
 typedef unsigned int(WINAPI *IF_NAMETOINDEX_FN)(const char *);
 
 /* This is used instead of if_nametoindex if available on Windows */
 extern IF_NAMETOINDEX_FN Curl_if_nametoindex;
-
-/* This is used to dynamically load DLLs */
-HMODULE Curl_load_library(LPCTSTR filename);
-
-#endif /* WIN32 */
+#endif
+#else  /* _WIN32 */
+#define Curl_win32_init(x) CURLE_OK
+#endif /* !_WIN32 */
 
 #endif /* HEADER_CURL_SYSTEM_WIN32_H */

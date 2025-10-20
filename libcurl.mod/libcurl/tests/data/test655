@@ -32,11 +32,11 @@ http
 lib%TESTNUMBER
 </tool>
 
- <name>
+<name>
 resolver start callback
- </name>
- <command>
-http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</name>
+<command>
+http://failthis/%TESTNUMBER http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </command>
 </client>
 

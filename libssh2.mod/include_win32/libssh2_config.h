@@ -39,6 +39,8 @@
 /* Enable newer diffie-hellman-group-exchange-sha1 syntax */
 #define LIBSSH2_DH_GEX_NEW 1
 
+#define LIBSSH2_MBEDTLS 1
+
 #endif /* LIBSSH2_CONFIG_H */
 
 

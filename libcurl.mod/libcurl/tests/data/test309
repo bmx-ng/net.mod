@@ -55,11 +55,11 @@ SSL
 http
 https
 </server>
- <name>
+<name>
 HTTP Location: redirect to HTTPS URL
- </name>
- <command>
--k http://%HOSTIP:%HTTPPORT/want/%TESTNUMBER -L
+</name>
+<command>
+--insecure http://%HOSTIP:%HTTPPORT/want/%TESTNUMBER -L
 </command>
 </client>
 

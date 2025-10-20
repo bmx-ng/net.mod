@@ -8,14 +8,11 @@ unittest
 #
 # Client-side
 <client>
-<server>
-none
-</server>
 <features>
 unittest
 </features>
- <name>
+<name>
 Curl_dedotdotify
- </name>
+</name>
 </client>
 </testcase>

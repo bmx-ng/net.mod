@@ -27,11 +27,11 @@ Connection: close
 <server>
 http
 </server>
- <name>
+<name>
 HTTP POST zero length, chunked-encoded
- </name>
- <command>
--d "" --header "Transfer-Encoding: chunked" http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</name>
+<command>
+-d "" --header="Transfer-Encoding: chunked" http://%HOSTIP:%HTTPPORT/%TESTNUMBER
 </command>
 </client>
 

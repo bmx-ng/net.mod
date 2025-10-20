@@ -9,15 +9,12 @@ splay
 #
 # Client-side
 <client>
-<server>
-none
-</server>
 <features>
 unittest
 </features>
- <name>
+<name>
 splay unit tests
- </name>
+</name>
 </client>
 
 <verify>

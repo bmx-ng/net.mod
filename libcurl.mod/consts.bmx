@@ -1,4 +1,4 @@
-' Copyright (c) 2007-2022 Bruce A Henderson
+' Copyright (c) 2007-2025 Bruce A Henderson
 ' 
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
 ' of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
 
 SuperStrict
 
-Const CURL_READFUNC_ABORT:Int = $10000000
+Const CURL_READFUNC_ABORT:Size_T = $10000000
 
 Rem
 bbdoc: Initialize SSL. No purpose since since 7.57.0
@@ -47,6 +47,7 @@ Const CURL_GLOBAL_DEFAULT:Int = CURL_GLOBAL_ALL
 Const CURL_GLOBAL_ACK_EINTR:Int = 1 Shl 2
 
 Const CURLOPTTYPE_LONG:Int = 0
+Const CURLOPTTYPE_VALUES:Int = CURLOPTTYPE_LONG
 Const CURLOPTTYPE_OBJECTPOINT:Int = 10000
 Const CURLOPTTYPE_STRINGPOINT:Int = 10000
 Const CURLOPTTYPE_FUNCTIONPOINT:Int = 20000
@@ -54,8 +55,10 @@ Const CURLOPTTYPE_OFF_T:Int = 30000
 Const CURLOPTTYPE_BLOB:Int = 40000
 Const CURLOPTTYPE_CBPOINT:Int = CURLOPTTYPE_OBJECTPOINT
 
-' see CURLOPT_WRITEDATA
-Const CURLOPT_FILE:Int = CURLOPTTYPE_OBJECTPOINT + 1
+Rem
+bbdoc: A reference to an object output should be written to.
+End Rem
+Const CURLOPT_WRITEDATA:Int = CURLOPTTYPE_OBJECTPOINT + 1
 
 Rem
 bbdoc: The actual URL to deal with.
@@ -258,10 +261,10 @@ bbdoc: See the #httpHeader method for details.
 End Rem
 Const CURLOPT_HTTPHEADER:Int = CURLOPTTYPE_OBJECTPOINT + 23
 
-Rem
-bbdoc: See the #httpPost method for details.
-End Rem
-Const CURLOPT_HTTPPOST:Int = CURLOPTTYPE_OBJECTPOINT + 24
+' Rem
+' bbdoc: See the #httpPost method for details.
+' End Rem
+' Const CURLOPT_HTTPPOST:Int = CURLOPTTYPE_OBJECTPOINT + 24
 
 Rem
 bbdoc: The file name of your certificate.
@@ -288,16 +291,16 @@ End Rem
 Const CURLOPT_QUOTE:Int = CURLOPTTYPE_OBJECTPOINT + 28
 
 ' see setHeaderCallback()
-Const CURLOPT_WRITEHEADER:Int = CURLOPTTYPE_OBJECTPOINT + 29
+Const CURLOPT_HEADERDATA:Int = CURLOPTTYPE_OBJECTPOINT + 29
 
 ' see setWriteCallback()
-Const CURLOPT_WRITEDATA:Int = CURLOPT_FILE
+'Const CURLOPT_WRITEDATA:Int = CURLOPT_FILE
 
 ' see setReadCallback()
 'Const CURLOPT_READDATA:Int = CURLOPT_READDATA
 
 ' see setHeaderCallback()
-Const CURLOPT_HEADERDATA:Int = CURLOPT_WRITEHEADER
+'Const CURLOPT_HEADERDATA:Int = CURLOPT_WRITEHEADER
 
 Rem
 bbdoc: A String containing the name of your file holding cookie data to read.
@@ -374,7 +377,7 @@ End Rem
 Const CURLOPT_POSTQUOTE:Int = CURLOPTTYPE_OBJECTPOINT + 39
 
 '
-Const CURLOPT_WRITEINFO:Int = CURLOPTTYPE_OBJECTPOINT + 40
+'Const CURLOPT_WRITEINFO:Int = CURLOPTTYPE_OBJECTPOINT + 40
 
 Rem
 bbdoc: Set to non-zero to get the library to display a lot of verbose information about its operations.
@@ -475,17 +478,27 @@ End Rem
 Const CURLOPT_POST:Int = CURLOPTTYPE_LONG + 47
 
 Rem
-bbdoc: A non-zero value tells the library to just list the names of an ftp directory, instead of doing a full directory listing that would include file sizes, dates etc.
-about:  This causes an FTP NLST command to be sent. Beware that some FTP servers list only files in their
-response to NLST; they might not include subdirectories and symbolic links.
+bbdoc: For FTP and SFTP based URLs a parameter set to 1 tells the library to list the names of files in a directory, rather than performing a full directory listing that would normally include file sizes, dates etc.
+about: For POP3 a parameter of 1 tells the library to list the email message or messages on the POP3 server.
+This can be used to change the default behavior of libcurl, when combined with a URL that contains a message ID,
+to perform a "scan listing" which can then be used to determine the size of an email.
+
+For FILE, this option has no effect yet as directories are always listed in this mode.
+
+Note: For FTP this causes a NLST command to be sent to the FTP server. Beware that some FTP servers list only files in their response
+to NLST; they might not include subdirectories and symbolic links.
+
+Setting this option to 1 also implies a directory listing even if the URL does not end with a slash, which otherwise is necessary.
+
+Do not use this option if you also use CURLOPT_WILDCARDMATCH as it effectively breaks that feature.
 End Rem
-Const CURLOPT_FTPLISTONLY:Int = CURLOPTTYPE_LONG + 48
+Const CURLOPT_DIRLISTONLY:Int = CURLOPTTYPE_LONG + 48
 
 Rem
 bbdoc: A non-zero value tells the library to append to the remote file instead of overwrite it.
 about: This is only useful when uploading to an ftp site.
 End Rem
-Const CURLOPT_FTPAPPEND:Int = CURLOPTTYPE_LONG + 50
+Const CURLOPT_APPEND:Int = CURLOPTTYPE_LONG + 50
 
 Rem
 bbdoc: This value controls the preference of libcurl between using user names and passwords from your ~/.netrc file, relative to user names and passwords in the URL supplied with #CURLOPT_URL.
@@ -518,20 +531,20 @@ End Rem
 Const CURLOPT_TRANSFERTEXT:Int = CURLOPTTYPE_LONG + 53
 
 ' deprecated : use CURLOPT_UPLOAD instead !
-Const CURLOPT_PUT:Int = CURLOPTTYPE_LONG + 54
+'Const CURLOPT_PUT:Int = CURLOPTTYPE_LONG + 54
 
 
 
+
+'Rem
+'bbdoc: For details see #setProgressCallback
+'End Rem
+'Const CURLOPT_PROGRESSFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 56
 
 Rem
 bbdoc: For details see #setProgressCallback
 End Rem
-Const CURLOPT_PROGRESSFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 56
-
-Rem
-bbdoc: For details see #setProgressCallback
-End Rem
-Const CURLOPT_PROGRESSDATA:Int = CURLOPTTYPE_OBJECTPOINT + 57
+Const CURLOPT_XFERINFODATA:Int = CURLOPTTYPE_OBJECTPOINT + 57
 
 Rem
 bbdoc: Pass a non-zero parameter to enable this. 
@@ -664,18 +677,18 @@ what it does. Set to 0 to have libcurl keep the connection open for possibly lat
 End Rem
 Const CURLOPT_FORBID_REUSE:Int = CURLOPTTYPE_LONG + 75
 
-Rem
-bbdoc: Set to a file name that contains random data.
-about: The file will be used to read from to seed the random engine for SSL. The more random the specified
-file is, the more secure the SSL connection will become.
-End Rem
-Const CURLOPT_RANDOM_FILE:Int = CURLOPTTYPE_OBJECTPOINT + 76
+' Rem
+' bbdoc: Set to a file name that contains random data.
+' about: The file will be used to read from to seed the random engine for SSL. The more random the specified
+' file is, the more secure the SSL connection will become.
+' End Rem
+' Const CURLOPT_RANDOM_FILE:Int = CURLOPTTYPE_OBJECTPOINT + 76
 
-Rem
-bbdoc: A path name to the Entropy Gathering Daemon socket.
-about: It will be used to seed the random engine for SSL.
-End Rem
-Const CURLOPT_EGDSOCKET:Int = CURLOPTTYPE_OBJECTPOINT + 77
+' Rem
+' bbdoc: A path name to the Entropy Gathering Daemon socket.
+' about: It will be used to seed the random engine for SSL.
+' End Rem
+' Const CURLOPT_EGDSOCKET:Int = CURLOPTTYPE_OBJECTPOINT + 77
 
 Rem
 bbdoc: It should contain the maximum time in seconds that you allow the connection to the server to take.
@@ -852,7 +865,7 @@ Rem
 bbdoc: The CApath directory used To validate the peer certificate
 about: This option is used only If #SSL_VERIFYPEER is True
 End Rem
-Const CURLOPT_CAPATH:Int = CURLOPTTYPE_OBJECTPOINT + 97
+Const CURLOPT_CAPATH:Int = CURLOPTTYPE_STRINGPOINT + 97
 
 Rem
 bbdoc: Specifies your preferred size (in bytes) for the receive buffer in libcurl.
@@ -884,7 +897,7 @@ Rem
 bbdoc: Indicates yype of proxy.
 about: Accepted values are #CURLPROXY_HTTP (default), #CURLPROXY_SOCKS4 And #CURLPROXY_SOCKS5.
 End Rem
-Const CURLOPT_PROXYTYPE:Int = CURLOPTTYPE_LONG + 101
+Const CURLOPT_PROXYTYPE:Int = CURLOPTTYPE_VALUES + 101
 
 Rem
 bbdoc: Sets the contents of the Accept-Encoding: header sent in an HTTP request, and enables decoding of a response when a Content-Encoding: header is received.
@@ -934,7 +947,7 @@ content (despite not having been asked), the data is returned in its raw form
 and the Content-Encoding type is not checked.
 </p>
 End Rem
-Const CURLOPT_ENCODING:Int = CURLOPTTYPE_OBJECTPOINT + 102
+Const CURLOPT_ENCODING:Int = CURLOPTTYPE_STRINGPOINT + 102
 
 Rem
 bbdoc: See the #setPrivate method for details.
@@ -1112,8 +1125,8 @@ about: See also #CURLOPT_FTP_SSL.
 End Rem
 Const CURLOPT_FTPSSLAUTH:Int = CURLOPTTYPE_LONG + 129
 
-Const CURLOPT_IOCTLFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 130
-Const CURLOPT_IOCTLDATA:Int = CURLOPTTYPE_OBJECTPOINT + 131
+' Const CURLOPT_IOCTLFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 130
+' Const CURLOPT_IOCTLDATA:Int = CURLOPTTYPE_OBJECTPOINT + 131
 
 Rem
 bbdoc: A String, or Null to disable.
@@ -1189,21 +1202,21 @@ and then the application can obtain the most recently used socket for special da
 End Rem
 Const CURLOPT_CONNECT_ONLY:Int = CURLOPTTYPE_LONG + 141
 
-Rem
-bbdoc: Function that will be called To convert from the network encoding (instead of using the iconv calls in libcurl)
-End Rem
-Const CURLOPT_CONV_FROM_NETWORK_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 142
+' Rem
+' bbdoc: Function that will be called To convert from the network encoding (instead of using the iconv calls in libcurl)
+' End Rem
+' Const CURLOPT_CONV_FROM_NETWORK_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 142
 
-Rem
-bbdoc: Function that will be called To convert To the network encoding (instead of using the iconv calls in libcurl)
-End Rem
-Const CURLOPT_CONV_TO_NETWORK_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 143
+' Rem
+' bbdoc: Function that will be called To convert To the network encoding (instead of using the iconv calls in libcurl)
+' End Rem
+' Const CURLOPT_CONV_TO_NETWORK_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 143
 
-Rem
-bbdoc: Function that will be called To convert from UTF8
-about: (instead of using the iconv calls in libcurl) Note that this is used only For SSL certificate processing
-End Rem
-Const CURLOPT_CONV_FROM_UTF8_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 144
+' Rem
+' bbdoc: Function that will be called To convert from UTF8
+' about: (instead of using the iconv calls in libcurl) Note that this is used only For SSL certificate processing
+' End Rem
+' Const CURLOPT_CONV_FROM_UTF8_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 144
 
 Rem
 bbdoc: If an upload exceeds this speed on cumulative average during the transfer, the transfer will pause to keep the average rate less than or equal to this Long value.
@@ -1487,7 +1500,12 @@ End Rem
 Const CURLOPT_INTERLEAVEFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 196
 
 Rem
-bbdoc: Turn on wildcard matching 
+bbdoc: Set to 1 if you want to transfer multiple files according to a filename pattern.
+about: The pattern can be specified as part of the #CURLOPT_URL option, using an fnmatch-like pattern
+(Shell Pattern Matching) in the last part of URL (filename).
+
+By default, libcurl uses its internal wildcard matching implementation. You can provide your own matching function by
+the #CURLOPT_FNMATCH_FUNCTION option.
 End Rem
 Const CURLOPT_WILDCARDMATCH:Int = CURLOPTTYPE_LONG + 197
 
@@ -1599,10 +1617,10 @@ bbdoc: Function that will be called instead of the internal progress display fun
 about: This function should be defined as the curl_xferinfo_callback prototype defines. (Deprecates CURLOPT_PROGRESSFUNCTION)
 End Rem
 Const CURLOPT_XFERINFOFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 219
-Rem
-bbdoc: A synonym for #CURLOPT_PROGRESSDATA
-End Rem
-Const CURLOPT_XFERINFODATA:Int = CURLOPT_PROGRESSDATA
+'Rem
+'bbdoc: A synonym for #CURLOPT_PROGRESSDATA
+'End Rem
+'Const CURLOPT_XFERINFODATA:Int = CURLOPT_PROGRESSDATA
 
 Rem
 bbdoc: The XOAUTH2 bearer token
@@ -1672,10 +1690,10 @@ bbdoc: Set if we should verify the certificate status.
 End Rem
 Const CURLOPT_SSL_VERIFYSTATUS:Int = CURLOPTTYPE_LONG + 232
 
-Rem
-bbdoc: Set if we should enable TLS false start.
-End Rem
-Const CURLOPT_SSL_FALSESTART:Int = CURLOPTTYPE_LONG + 233
+' Rem
+' bbdoc: Set if we should enable TLS false start.
+' End Rem
+' Const CURLOPT_SSL_FALSESTART:Int = CURLOPTTYPE_LONG + 233
 
 Rem
 bbdoc: Do not squash dot-dot sequences
@@ -2051,6 +2069,21 @@ bbdoc:  maximum age (since creation) of a connection to consider it for reuse (i
 End Rem
 Const CURLOPT_MAXLIFETIME_CONN:Int = CURLOPTTYPE_LONG + 314
 
+Const CURLOPT_MIME_OPTIONS:Int = CURLOPTTYPE_LONG + 315
+Const CURLOPT_SSH_HOSTKEYFUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 316
+Const CURLOPT_SSH_HOSTKEYDATA:Int = CURLOPTTYPE_OBJECTPOINT + 317
+Const CURLOPT_PROTOCOLS_STR:Int = CURLOPTTYPE_STRINGPOINT + 318
+Const CURLOPT_REDIR_PROTOCOLS_STR:Int = CURLOPTTYPE_STRINGPOINT + 319
+Const CURLOPT_WS_OPTIONS:Int = CURLOPTTYPE_LONG + 320
+Const CURLOPT_CA_CACHE_TIMEOUT:Int = CURLOPTTYPE_LONG + 321
+Const CURLOPT_QUICK_EXIT:Int = CURLOPTTYPE_LONG + 322
+Const CURLOPT_HAPROXY_CLIENT_IP:Int = CURLOPTTYPE_STRINGPOINT + 323
+Const CURLOPT_SERVER_RESPONSE_TIMEOUT_MS:Int = CURLOPTTYPE_LONG + 324
+Const CURLOPT_ECH:Int = CURLOPTTYPE_LONG + 325
+Const CURLOPT_TCP_KEEPCNT:Int = CURLOPTTYPE_LONG + 326
+Const CURLOPT_UPLOAD_FLAGS:Int = CURLOPTTYPE_LONG + 327
+Const CURLOPT_SSL_SIGNATURE_ALGORITHMS:Int = CURLOPTTYPE_STRINGPOINT + 328
+
 Rem
 bbdoc: No authentication
 End Rem
@@ -2070,6 +2103,9 @@ networks than the regular old-fashioned Basic method.
 End Rem
 Const CURLAUTH_DIGEST:Int = 1 Shl 1
 
+Rem
+bbdoc: HTTP Negotiate (SPNEGO) authentication.
+End Rem
 Const CURLAUTH_NEGOTIATE:Int = 1 Shl 2
 
 Rem
@@ -2084,8 +2120,15 @@ Const CURLAUTH_NTLM:Int = 1 Shl 3
 
 Const CURLAUTH_DIGEST_IE:Int = 1 Shl 4
 
-Const CURLAUTH_NTLM_WB:Int = 1 Shl 5
+Rem
+bbdoc: HTTP Bearer token authentication
+End Rem
+Const CURLAUTH_BEARER:Int = 1 Shl 6
+Const CURLAUTH_AWS_SIGV4:Int = 1 Shl 7
 
+Rem
+bbdoc: Use together with a single other type to force no authentication or just that single type
+End Rem
 Const CURLAUTH_ONLY:Int = 1 Shl 31
 
 Rem
@@ -2894,3 +2937,83 @@ Rem
 bbdoc: SSL for all communication or fail
 End Rem
 Const CURLUSESSL_ALL:Int = 3
+
+Rem
+bbdoc: Returns default port number
+End Rem
+Const CURLU_DEFAULT_PORT:Int = 1 Shl 0
+
+Rem
+bbdoc: Acts as if no port number was set, if the port number matches the default for the scheme
+End Rem
+Const CURLU_NO_DEFAULT_PORT:Int = 1 Shl 1
+
+Rem
+bbdoc: Returns default scheme if missing
+End Rem
+Const CURLU_DEFAULT_SCHEME:Int = 1 Shl 2
+
+Rem
+bbdoc: Allows non-supported scheme
+End Rem
+Const CURLU_NON_SUPPORT_SCHEME:Int = 1 Shl 3
+
+Rem
+bbdoc: Leaves dot sequences
+End Rem
+Const CURLU_PATH_AS_IS:Int = 1 Shl 4
+
+Rem
+bbdoc: No user+password allowed
+End Rem
+Const CURLU_DISALLOW_USER:Int = 1 Shl 5
+
+Rem
+bbdoc: URL decode on get
+End Rem
+Const CURLU_URLDECODE:Int = 1 Shl 6
+
+Rem
+bbdoc: URL encode on set
+End Rem
+Const CURLU_URLENCODE:Int = 1 Shl 7
+
+Rem
+bbdoc: Appends a form style part
+End Rem
+Const CURLU_APPENDQUERY:Int = 1 Shl 8
+
+Rem
+bbdoc: Legacy curl-style guessing
+End Rem
+Const CURLU_GUESS_SCHEME:Int = 1 Shl 9
+
+Rem
+bbdoc: Allows empty authority when the scheme is unknown.
+End Rem
+Const CURLU_NO_AUTHORITY:Int = 1 Shl 10
+
+Rem
+bbdoc: Allows spaces in the URL
+End Rem
+Const CURLU_ALLOW_SPACE:Int = 1 Shl 11
+
+Rem
+bbdoc: Gets the hostname in punycode
+End Rem
+Const CURLU_PUNYCODE:Int = 1 Shl 12
+
+Rem
+bbdoc: Punycode => IDN conversion
+End Rem
+Const CURLU_PUNY2IDN:Int = 1 Shl 13
+
+Rem
+bbdoc: Allows empty queries and fragments when extracting the URL or the components
+End Rem
+Const CURLU_GET_EMPTY:Int = 1 Shl 14
+
+Rem
+bbdoc: For get, do not accept a guess
+End Rem
+Const CURLU_NO_GUESS_SCHEME:Int = 1 Shl 15

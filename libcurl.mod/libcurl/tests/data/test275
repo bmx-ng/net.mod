@@ -50,10 +50,10 @@ contents
 http
 http-proxy
 </server>
- <name>
+<name>
 HTTP CONNECT with proxytunnel getting two URLs from the same host
- </name>
- <command>
+</name>
+<command>
 http://remotesite.com.%TESTNUMBER:%HTTPPORT/we/want/that/page/%TESTNUMBER -p -x %HOSTIP:%PROXYPORT --user iam:myself --proxy-user youare:yourself http://remotesite.com.%TESTNUMBER:%HTTPPORT/we/want/that/page/%TESTNUMBER
 </command>
 <features>
@@ -67,7 +67,7 @@ proxy
 <proxy>
 CONNECT remotesite.com.%TESTNUMBER:%HTTPPORT HTTP/1.1
 Host: remotesite.com.%TESTNUMBER:%HTTPPORT
-Proxy-Authorization: Basic eW91YXJlOnlvdXJzZWxm
+Proxy-Authorization: Basic %b64[youare:yourself]b64%
 User-Agent: curl/%VERSION
 Proxy-Connection: Keep-Alive
 
@@ -75,13 +75,13 @@ Proxy-Connection: Keep-Alive
 <protocol>
 GET /we/want/that/page/%TESTNUMBER HTTP/1.1
 Host: remotesite.com.%TESTNUMBER:%HTTPPORT
-Authorization: Basic aWFtOm15c2VsZg==
+Authorization: Basic %b64[iam:myself]b64%
 User-Agent: curl/%VERSION
 Accept: */*
 
 GET /we/want/that/page/%TESTNUMBER HTTP/1.1
 Host: remotesite.com.%TESTNUMBER:%HTTPPORT
-Authorization: Basic aWFtOm15c2VsZg==
+Authorization: Basic %b64[iam:myself]b64%
 User-Agent: curl/%VERSION
 Accept: */*
 

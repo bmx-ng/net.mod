@@ -20,13 +20,10 @@ non-existing host
 <features>
 http
 </features>
-<server>
-none
-</server>
- <name>
+<name>
 HTTP GET with invalid --interface
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%NOLISTENPORT/%TESTNUMBER --interface non-existing-host.haxx.se.
 </command>
 </client>

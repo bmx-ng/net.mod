@@ -54,14 +54,15 @@ This IS the real page!
 <features>
 !SSPI
 NTLM
+digest
 </features>
 <server>
 http
 </server>
- <name>
+<name>
 HTTP with Digest *OR* NTLM authorization
- </name>
- <command>
+</name>
+<command>
 http://%HOSTIP:%HTTPPORT/%TESTNUMBER -u testuser:testpass --anyauth
 </command>
 </client>
