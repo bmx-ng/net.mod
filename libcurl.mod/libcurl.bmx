@@ -35,6 +35,7 @@ ModuleInfo "Modserver: BRL"
 
 ModuleInfo "History: 1.10"
 ModuleInfo "History: Update to libcurl 8.16.0"
+ModuleInfo "History: Enabled use of libssh2 for SFTP support."
 ModuleInfo "History: 1.09"
 ModuleInfo "History: Linux build fixes."
 ModuleInfo "History: 1.08"
@@ -72,7 +73,7 @@ ModuleInfo "History: 1.00 Initial Release (libcurl 7.16.4, c-ares 1.4.0)"
 ?Not win32
 ModuleInfo "CC_OPTS: -DHAVE_CONFIG_H"
 ?win32
-ModuleInfo "CC_OPTS: -DHAVE_GETTIMEOFDAY -DCURL_DISABLE_LDAP"
+ModuleInfo "CC_OPTS: -DHAVE_GETTIMEOFDAY -DCURL_DISABLE_LDAP -DUSE_LIBSSH2"
 ?
 ModuleInfo "CC_OPTS: -DCURL_STATICLIB -DCARES_STATICLIB -DCURL_STRICTER -DUSE_MBEDTLS -DBUILDING_LIBCURL"
 ?macosArm64
