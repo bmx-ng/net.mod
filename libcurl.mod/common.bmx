@@ -68,6 +68,7 @@ Extern
 	Function bmx_curl_easy_setopt_ptr:Int(handle:Byte Ptr, option:Int, param:Byte Ptr)
 	Function bmx_curl_easy_setopt_obj:Int(handle:Byte Ptr, option:Int, param:Object)
 	Function bmx_curl_easy_setopt_bbint64:Int(handle:Byte Ptr, option:Int, param:Long)
+	Function bmx_curl_easy_setopt_cainfoblob:Int(handle:Byte Ptr, blob:Byte Ptr, length:Int)
 	
 	Function bmx_curl_formadd_name_content(httppostPtr:SCurlHttpPost Var, name:Byte Ptr, content:Byte Ptr)
 	Function bmx_curl_formadd_name_content_type(httppostPtr:SCurlHttpPost Var, name:Byte Ptr, content:Byte Ptr, t:Byte Ptr)
@@ -77,7 +78,7 @@ Extern
 
 	Function curl_formfree(handle:Byte Ptr)
 	
-	Function bmx_curl_easy_getinfo_string:Int(handle:Byte Ptr, option:Int, b:Byte Ptr)
+	Function bmx_curl_easy_getinfo_string:Int(handle:Byte Ptr, option:Int, s:String Var)
 	Function bmx_curl_easy_getinfo_int:Int(handle:Byte Ptr, option:Int, value:Int Ptr)
 	Function bmx_curl_easy_getinfo_double:Int(handle:Byte Ptr, option:Int, value:Double Ptr)
 	Function bmx_curl_easy_getinfo_obj:Object(handle:Byte Ptr, option:Int, error:Int Ptr)
@@ -93,7 +94,10 @@ Extern
 	Function bmx_curl_easy_setopt_slist(handle:Byte Ptr, option:Int, slist:SCurlSlist Ptr)
 	
 	Function bmx_curl_multi_setopt_int(handle:Byte Ptr, option:Int, param:Int)
+	Function bmx_curl_multi_poll:Int(handle:Byte Ptr, timeout_ms:Int, numfds:Int Ptr)
+	Function bmx_curl_multi_timeout:Int(handle:Byte Ptr, timeout:Int Ptr)
 	
+	Function bmx_curl_easy_escape:String(txt:String)
 End Extern
 
 Type TSList
@@ -113,6 +117,14 @@ Type TSList
 			slist = Null
 			count = 0
 			Return False
+		End If
+	End Method
+
+	Method Free()
+		If slist Then
+			curl_slist_free_all(slist)
+			slist = Null
+			count = 0
 		End If
 	End Method
 End Type

@@ -50,6 +50,14 @@ int bmx_curl_easy_setopt_bbint64(CURL *curl, int option, BBInt64 param) {
 	return curl_easy_setopt(curl, option, param);
 }
 
+int bmx_curl_easy_setopt_cainfoblob(CURL *curl, const unsigned char * data, int length) {
+	struct curl_blob blob;
+	blob.data = data;
+    blob.len = (size_t)length;
+    blob.flags = CURL_BLOB_COPY;
+	return curl_easy_setopt(curl, CURLOPT_CAINFO_BLOB, &blob);
+}
+
 void bmx_curl_formadd_name_content(struct curlHttpPost * httpPost, const char * name, const char * content) {
 	curl_formadd(&httpPost->post, &httpPost->last, CURLFORM_PTRNAME, name, CURLFORM_PTRCONTENTS, content, CURLFORM_END);
 }
@@ -82,13 +90,22 @@ void bmx_curl_setopt(struct curlHttpPost * httpPost, CURL * curl) {
 	curl_easy_setopt(curl, CURLOPT_HTTPPOST, httpPost->post);
 }
 
-CURLcode bmx_curl_easy_getinfo_string(CURL *curl, CURLINFO info, char * s) {
-	return curl_easy_getinfo(curl, info, s);
-
+CURLcode bmx_curl_easy_getinfo_string(CURL *curl, CURLINFO info, BBString ** s) {
+	char * str = NULL;
+	CURLcode res = curl_easy_getinfo(curl, info, &str);
+	if (str) {
+		*s = bbStringFromUTF8String((unsigned char*)str);
+	} else {
+		*s = &bbEmptyString;
+	}
+	return res;
 }
 
 CURLcode bmx_curl_easy_getinfo_int(CURL *curl, CURLINFO info, int * value) {
-	return curl_easy_getinfo(curl, info, value);
+	long v = 0;
+	CURLcode res = curl_easy_getinfo(curl, info, &v);
+	*value = (int)v;
+	return res;
 }
 
 CURLcode bmx_curl_easy_getinfo_double(CURL *curl, CURLINFO info, double * value) {
@@ -96,13 +113,19 @@ CURLcode bmx_curl_easy_getinfo_double(CURL *curl, CURLINFO info, double * value)
 }
 
 CURLcode bmx_curl_easy_getinfo_long(CURL *curl, CURLINFO info, BBInt64 * value) {
-	return curl_easy_getinfo(curl, info, value);
+	long v = 0;
+	CURLcode res = curl_easy_getinfo(curl, info, &v);
+	*value = (BBInt64)v;
+	return res;
 }
 
-char * bmx_curl_easy_getinfo_obj(CURL * curl, CURLINFO info, CURLcode * error) {
-	char * priv = NULL;
-	*error = curl_easy_getinfo(curl, info, priv);
-	return priv;
+BBObject * bmx_curl_easy_getinfo_obj(CURL * curl, CURLINFO info, CURLcode * error) {
+	void * priv = NULL;
+	*error = curl_easy_getinfo(curl, info, &priv);
+	if (!priv) {
+		return &bbNullObject;
+	}
+	return (BBObject *)priv;
 }
 
 int bmx_curl_multiselect(CURLM * multi, double timeout) {
@@ -193,4 +216,28 @@ CURLUcode bmx_curl_url_get(CURLU * handle, CURLUPart part, BBString ** content, 
 BBString * bmx_curl_url_strerror(CURLUcode code) {
 	const char * c = curl_url_strerror(code);
 	return bbStringFromUTF8String((unsigned char*)c);
+}
+
+BBString * bmx_curl_easy_escape(BBString * txt) {
+	size_t len;
+	unsigned char * c = (unsigned char*)bbStringToUTF8StringLen(txt, &len);
+	char * escaped = curl_easy_escape(NULL, (const char*)c, len);
+	bbMemFree(c);
+	if ( !escaped ) {
+		return &bbEmptyString;
+	}
+	BBString * result = bbStringFromUTF8String((unsigned char*)escaped);
+	curl_free(escaped);
+	return result;
+}
+
+CURLMcode bmx_curl_multi_poll(CURLM * multi, int timeout_ms, int *numfds) {
+	return curl_multi_poll(multi, NULL, 0, timeout_ms, numfds);
+}
+
+CURLMcode bmx_curl_multi_timeout(CURLM * multi, int * timeout) {
+	long t;
+	CURLMcode res = curl_multi_timeout(multi, &t);
+	*timeout = (int)t;
+	return res;
 }

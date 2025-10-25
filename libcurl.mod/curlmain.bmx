@@ -185,6 +185,13 @@ Type TCurlEasy Extends TCurlHasLists
 	End Method
 
 	Rem
+	bbdoc: Creates and sets a CAINFO blob for the given PEM data.
+	End Rem
+	Method setOptCAInfoBlob:Int(blob:Byte Ptr, length:Int)
+		Return bmx_curl_easy_setopt_cainfoblob(easyHandlePtr, blob, length)
+	End Method
+
+	Rem
 	bbdoc: Perform a file transfer.
 	returns: 0 when successful, or non-zero when an error occured.
 	about: This method is called after all the @setOpt calls are made, and will perform the transfer as described in the options.
@@ -934,12 +941,12 @@ Type TCurlInfo
 	bbdoc: The last used effective URL.
 	End Rem
 	Method effectiveURL:String()
-		Local s:Byte Ptr
+		Local s:String
 		
-		error = bmx_curl_easy_getinfo_string(easyHandlePtr, CURLINFO_EFFECTIVE_URL, Varptr s)
+		error = bmx_curl_easy_getinfo_string(easyHandlePtr, CURLINFO_EFFECTIVE_URL, s)
 		
 		If Not error Then
-			Return String.fromUTF8String(s)
+			Return s
 		End If
 		
 		Return Null
@@ -951,11 +958,14 @@ Type TCurlInfo
 	should be read with #httpConnectCode and not this.
 	End Rem
 	Method responseCode:Int()
-		Local value:Int
-		
-		error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_RESPONSE_CODE, Varptr value)
-		
-		Return value
+		If easyHandlePtr Then
+			Local value:Int
+
+			error = bmx_curl_easy_getinfo_int(easyHandlePtr, CURLINFO_RESPONSE_CODE, Varptr value)
+			
+			Return value
+		End If
+		Return -9999
 	End Method
 	
 	Rem
@@ -1190,14 +1200,12 @@ Type TCurlInfo
 	send a valid Content-Type header or that the protocol used doesn't support this.
 	End Rem
 	Method contentType:String()
-		Local s:Byte Ptr
+		Local s:String
 		
-		error = bmx_curl_easy_getinfo_string(easyHandlePtr, CURLINFO_CONTENT_TYPE, Varptr s)
+		error = bmx_curl_easy_getinfo_string(easyHandlePtr, CURLINFO_CONTENT_TYPE, s)
 		
 		If Not error Then
-			If s Then
-				Return String.fromUTF8String(s)
-			End If
+			Return s
 		End If
 		
 		Return Null
@@ -1291,13 +1299,13 @@ Type TCurlInfo
 	This will return Null if something is wrong.
 	End Rem
 	Method ftpEntryPath:String()
-		Local s:Byte Ptr
+		Local s:String
 		
-		error = bmx_curl_easy_getinfo_string(easyHandlePtr, CURLINFO_FTP_ENTRY_PATH, Varptr s)
+		error = bmx_curl_easy_getinfo_string(easyHandlePtr, CURLINFO_FTP_ENTRY_PATH, s)
 		
 		If Not error Then
 			If s Then
-				Return String.fromUTF8String(s)
+				Return s
 			End If
 		End If
 		
@@ -1486,6 +1494,22 @@ Type TCurlMulti
 		If multiHandlePtr Then
 		
 			Return curl_multi_perform(multiHandlePtr, Varptr runningHandles)
+		
+		End If
+	End Method
+
+	Method multiPoll:Int(timeout_ms:Int, numfds:Int Var)
+		If multiHandlePtr Then
+		
+			Return bmx_curl_multi_poll(multiHandlePtr, timeout_ms, Varptr numfds)
+		
+		End If
+	End Method
+
+	Method multiTimeout:Int(timeout_ms:Int Var)
+		If multiHandlePtr Then
+		
+			Return bmx_curl_multi_timeout(multiHandlePtr, Varptr timeout_ms)
 		
 		End If
 	End Method
