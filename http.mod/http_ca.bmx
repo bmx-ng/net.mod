@@ -32,6 +32,7 @@ Import "glue.c"
 ?macos
 Import "macos_ca_glue.c"
 ?win32
+Import "-lCrypt32 -lAdvapi32"
 Import "win32_ca_glue.c"
 ?
 
