@@ -22,7 +22,7 @@ SuperStrict
 Import BRL.FileSystem
 Import brl.collections
 Import Brl.stringbuilder
-import brl.standardio
+
 Import "../mbedtls.mod/mbedtls/include/*.h"
 
 ?win32 or macos
@@ -198,9 +198,9 @@ Type TLinuxCAStore Extends TFileCAStore
 	Method New()
 		Super.New([..
 			"/etc/ssl/certs/ca-certificates.crt",..
-    		"/etc/pki/tls/certs/ca-bundle.crt",..
-    		"/etc/ssl/ca-bundle.pem",..
-    		"/etc/ssl/cert.pem"])
+			"/etc/pki/tls/certs/ca-bundle.crt",..
+			"/etc/ssl/ca-bundle.pem",..
+			"/etc/ssl/cert.pem"])
 	End Method
 
 End Type
@@ -301,66 +301,66 @@ End Extern
 
 ?win32
 Type TWindowsCAStore Extends TSystemCAStore
-    Field _bundle:String
-    Field _processed:Int
-    Field _valid:Int
+	Field _bundle:String
+	Field _processed:Int
+	Field _valid:Int
 
-    Method IsABlob:Int() Override Return True End Method
+	Method IsABlob:Int() Override Return True End Method
 
-    Method VerifyBundle:Int() Override
-        If Not _processed Then
-            Local bundler:TWindowsCAStoreBundler = New TWindowsCAStoreBundler(Self)
-            bmx_net_http_win32_build_ca_bundle(bundler)
-            If bundler.HasBundle() Then
-                _bundle = bundler.GetBundle()
-                _valid = True
-            End If
-            _processed = True
-        End If
-        Return _valid
-    End Method
+	Method VerifyBundle:Int() Override
+		If Not _processed Then
+			Local bundler:TWindowsCAStoreBundler = New TWindowsCAStoreBundler(Self)
+			bmx_net_http_win32_build_ca_bundle(bundler)
+			If bundler.HasBundle() Then
+				_bundle = bundler.GetBundle()
+				_valid = True
+			End If
+			_processed = True
+		End If
+		Return _valid
+	End Method
 
-    Method CertsAsBlob:Byte[]() Override
-        If Not _valid Or Not _bundle Then Return Null
-        Local length:Size_T = _bundle.Length
-        Local buf:Byte[length]
-        _bundle.ToUTF8StringBuffer(buf, length)
-        Return buf
-    End Method
+	Method CertsAsBlob:Byte[]() Override
+		If Not _valid Or Not _bundle Then Return Null
+		Local length:Size_T = _bundle.Length
+		Local buf:Byte[length]
+		_bundle.ToUTF8StringBuffer(buf, length)
+		Return buf
+	End Method
 End Type
 
 Type TWindowsCAStoreBundler
-    Field store:TWindowsCAStore
-    Field bundles:TTreeMap<String, String> = New TTreeMap<String, String>
+	Field store:TWindowsCAStore
+	Field bundles:TTreeMap<String, String> = New TTreeMap<String, String>
 
-    Method New(store:TWindowsCAStore)
-        Self.store = store
-    End Method
+	Method New(store:TWindowsCAStore)
+		Self.store = store
+	End Method
 
-    Method HasBundle:Int()
+	Method HasBundle:Int()
 		Return Not bundles.IsEmpty()
 	End Method
 
-    Method GetBundle:String()
-        Local sb:TStringBuilder = New TStringBuilder
-        For Local pem:String = EachIn bundles.Values()
-            sb.Append(pem)
-        Next
-        Return sb.ToString()
-    End Method
+	Method GetBundle:String()
+		Local sb:TStringBuilder = New TStringBuilder
+		For Local pem:String = EachIn bundles.Values()
+			sb.Append(pem)
+		Next
+		Return sb.ToString()
+	End Method
 
-    Method ProcessDer(data:Byte Ptr, length:Size_T, hash:String)
-        If Not bundles.ContainsKey(hash) Then
-            Local pem:String
-            If bmx_net_http_der_to_pem(data, length, pem) = 0 Then
-                bundles.Add(hash, pem)
-            End If
-        End If
-    End Method
+	Method ProcessDer(data:Byte Ptr, length:Size_T, hash:String)
+		If Not bundles.ContainsKey(hash) Then
+			Local pem:String
+			If bmx_net_http_der_to_pem(data, length, pem) = 0 Then
+				bundles.Add(hash, pem)
+			End If
+		End If
+	End Method
 
-    Function _ProcessDer(data:Byte Ptr, length:Size_T, hash:String, bundler:TWindowsCAStoreBundler) { nomangle }
-        bundler.ProcessDer(data, length, hash)
-    End Function
+	Function _ProcessDer(data:Byte Ptr, length:Size_T, hash:String, bundler:TWindowsCAStoreBundler) { nomangle }
+		bundler.ProcessDer(data, length, hash)
+	End Function
 End Type
 
 TCAStoreProvider.INSTANCE.Register( New TWindowsCAStore() )

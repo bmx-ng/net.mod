@@ -186,108 +186,108 @@ Type THttpFieldEnumerator
 End Type
 
 Enum EHttpMethod
-    Get
-    Post
-    Put
-    Delete
-    Head
-    Options
-    Patch
-    Trace
+	Get
+	Post
+	Put
+	Delete
+	Head
+	Options
+	Patch
+	Trace
 End Enum
 
 Enum EHttpHeader
-    Accept
-    AcceptCharset
-    AcceptEncoding
-    AcceptLanguage
-    AcceptRanges
-    AccessControlAllowCredentials
-    AccessControlAllowHeaders
-    AccessControlAllowMethods
-    AccessControlAllowOrigin
-    AccessControlExposeHeaders
-    AccessControlMaxAge
-    AccessControlRequestHeaders
-    AccessControlRequestMethod
-    Age
-    Allow
-    AltSvc
-    Authorization
-    CAuthority
-    CMethod
-    CPath
-    CProtocol
-    CScheme
-    CStatus
-    CacheControl
-    Connection
-    ContentDisposition
-    ContentEncoding
-    ContentLanguage
-    ContentLength
-    ContentLocation
-    ContentMD5
-    ContentRange
-    ContentTransferEncoding
-    ContentType
-    Cookie
-    Date
-    ETag
-    Expect
-    Expires
-    Forwarded
-    From
-    Host
-    Http2Settings
-    Identity
-    IfMatch
-    IfModifiedSince
-    IfNoneMatch
-    IfRange
-    IfUnmodifiedSince
-    KeepAlive
-    LastModified
-    Link
-    Location
-    MaxForwards
-    MimeVersion
-    Negotiate
-    Origin
-    Pragma
-    ProxyAuthenticate
-    ProxyAuthorization
-    ProxyConnection
-    Range
-    Referer
-    RequestRange
-    RetryAfter
-    SecWebsocketAccept
-    SecWebsocketExtensions
-    SecWebsocketKey
-    SecWebsocketSubprotocol
-    SecWebsocketVersion
-    Server
-    ServletEngine
-    SetCookie
-    SetCookie2
-    StrictTransportSecurity
-    TE
-    TimingAllowOrigin
-    Trailer
-    TransferEncoding
-    Upgrade
-    UserAgent
-    Vary
-    Via
-    Warning
-    WWWAuthenticate
-    XForwardedFor
-    XForwardedHost
-    XForwardedPort
-    XForwardedProto
-    XForwardedServer
-    XPoweredBy
+	Accept
+	AcceptCharset
+	AcceptEncoding
+	AcceptLanguage
+	AcceptRanges
+	AccessControlAllowCredentials
+	AccessControlAllowHeaders
+	AccessControlAllowMethods
+	AccessControlAllowOrigin
+	AccessControlExposeHeaders
+	AccessControlMaxAge
+	AccessControlRequestHeaders
+	AccessControlRequestMethod
+	Age
+	Allow
+	AltSvc
+	Authorization
+	CAuthority
+	CMethod
+	CPath
+	CProtocol
+	CScheme
+	CStatus
+	CacheControl
+	Connection
+	ContentDisposition
+	ContentEncoding
+	ContentLanguage
+	ContentLength
+	ContentLocation
+	ContentMD5
+	ContentRange
+	ContentTransferEncoding
+	ContentType
+	Cookie
+	Date
+	ETag
+	Expect
+	Expires
+	Forwarded
+	From
+	Host
+	Http2Settings
+	Identity
+	IfMatch
+	IfModifiedSince
+	IfNoneMatch
+	IfRange
+	IfUnmodifiedSince
+	KeepAlive
+	LastModified
+	Link
+	Location
+	MaxForwards
+	MimeVersion
+	Negotiate
+	Origin
+	Pragma
+	ProxyAuthenticate
+	ProxyAuthorization
+	ProxyConnection
+	Range
+	Referer
+	RequestRange
+	RetryAfter
+	SecWebsocketAccept
+	SecWebsocketExtensions
+	SecWebsocketKey
+	SecWebsocketSubprotocol
+	SecWebsocketVersion
+	Server
+	ServletEngine
+	SetCookie
+	SetCookie2
+	StrictTransportSecurity
+	TE
+	TimingAllowOrigin
+	Trailer
+	TransferEncoding
+	Upgrade
+	UserAgent
+	Vary
+	Via
+	Warning
+	WWWAuthenticate
+	XForwardedFor
+	XForwardedHost
+	XForwardedPort
+	XForwardedProto
+	XForwardedServer
+	XPoweredBy
 End Enum
 
 Rem
@@ -419,21 +419,21 @@ Type THttpHelper
 
 	Public
 
-    Function HttpMethodToString:String( httpMethod:EHttpMethod )
-        Return httpMethod.ToString().ToUpper()
-    End Function
+	Function HttpMethodToString:String( httpMethod:EHttpMethod )
+		Return httpMethod.ToString().ToUpper()
+	End Function
 
-    Function StringToHttpMethod:EHttpMethod( httpMethod:String )
-        Try
-            Return EHttpMethod.FromString( httpMethod )
-        Catch ex:Object
-            Return EHttpMethod.Get
-        End Try
-    End Function
+	Function StringToHttpMethod:EHttpMethod( httpMethod:String )
+		Try
+			Return EHttpMethod.FromString( httpMethod )
+		Catch ex:Object
+			Return EHttpMethod.Get
+		End Try
+	End Function
 
-    Function HttpHeaderToString:String( header:EHttpHeader )
-        Return _headerToNameCache[ header ]
-    End Function
+	Function HttpHeaderToString:String( header:EHttpHeader )
+		Return _headerToNameCache[ header ]
+	End Function
 
 	Function StringToHttpHeader:EHttpHeader( header:String )
 
