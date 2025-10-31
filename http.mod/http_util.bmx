@@ -70,32 +70,37 @@ Public
 		Return False
 	End Method
 
+	Method ToString:String()
+		Return _name + ": " + _value
+	End Method
+
 End Type
 
 Type THttpFields
 
 	Field _fields:TArrayList<THttpField> = New TArrayList<THttpField>
 
-	Method Add:THttpFields(name:String, value:String)
-		_fields.Add( New THttpField(name, value) )
-		Return Self
+	Method Add:THttpField(name:String, value:String)
+		Local _field:THttpField = New THttpField(name, value)
+		_fields.Add( _field )
+		Return _field
 	End Method
 
-	Method Add:THttpFields(header:EHttpHeader, value:String)
-		_fields.Add( New THttpField(header, value) )
-		Return Self
+	Method Add:THttpField(header:EHttpHeader, value:String)
+		Local _field:THttpField = New THttpField(header, value)
+		_fields.Add( _field )
+		Return _field
 	End Method
 
-	Method Add:THttpFields( fields:THttpFields )
+	Method Add( fields:THttpFields )
 		For Local f:THttpField = EachIn fields
 			_fields.Add( f )
 		Next
-		Return Self
 	End Method
 
-	Method Add:THttpFields( _field:THttpField )
+	Method Add:THttpField( _field:THttpField )
 		_fields.Add( _field )
-		Return Self
+		Return _field
 	End Method
 
 	Method GetFirst:String(name:String)
@@ -122,14 +127,14 @@ Type THttpFields
 	Rem
 	bbdoc: Adds a header line in the format "Name: Value".
 	End Rem
-	Method Add:THttpFields( line:String )
+	Method Add:THttpField( line:String )
 		Local sepPos:Int = line.Find( ":" )
 		If sepPos > 0
-			Local name:String = line[..sepPos - 1].Trim()
+			Local name:String = line[..sepPos].Trim()
 			Local value:String = line[sepPos + 1..].Trim()
-			Add( name, value )
+			Return Add( name, value )
 		End If
-		Return Self
+		' Return Self
 	End Method
 
 	Method HasHeader:Int(header:EHttpHeader)

@@ -175,3 +175,171 @@ Type TUrlQueryEncodeTest Extends TTest
 	End Method
 
 End Type
+
+Type TSetCookieParserTest Extends TTest
+
+    ' --- Basic name/value ---
+
+    Method testSimpleNameValue() { test }
+        Local c:THttpCookie = TSetCookieParser.Parse("id=abc123")
+        AssertNotNull(c, "Should parse a simple name=value cookie")
+        AssertEquals("id", c.GetName(), "Name mismatch")
+        AssertEquals("abc123", c.GetValue(), "Value mismatch")
+    End Method
+
+    Method testEmptyValue() { test }
+        Local c:THttpCookie = TSetCookieParser.Parse("empty=")
+        AssertNotNull(c, "Empty value is allowed")
+        AssertEquals("empty", c.GetName())
+        AssertEquals("", c.GetValue())
+    End Method
+
+    Method testQuotedValue() { test }
+        Local c:THttpCookie = TSetCookieParser.Parse("q=~qhello world~q; Path=/")
+        AssertNotNull(c)
+        AssertEquals("q", c.GetName())
+        AssertEquals("hello world", c.GetValue(), "Quoted value should be unquoted")
+        AssertEquals("/", c.GetPath())
+    End Method
+
+    ' --- Attributes & flags ---
+
+    Method testCommonAttributes() { test }
+        Local sc:String = "session=xyz; Path=/app; Domain=example.com; Max-Age=3600; Secure; HttpOnly; SameSite=Strict"
+        Local c:THttpCookie = TSetCookieParser.Parse(sc)
+        AssertNotNull(c)
+        AssertEquals("session", c.GetName())
+        AssertEquals("xyz", c.GetValue())
+        AssertEquals("/app", c.GetPath())
+        AssertEquals("example.com", c.GetDomain())
+        AssertEquals(Long(3600), c.GetMaxAge(), "Max-Age numeric parse")
+        AssertTrue(c.IsSecure(), "Secure flag should be set")
+        AssertTrue(c.IsHttpOnly(), "HttpOnly flag should be set")
+        AssertEquals("Strict", c.GetSameSite(), "SameSite=Strict")
+    End Method
+
+    Method testAttributeCaseInsensitivity() { test }
+        Local sc:String = "N=v; pAtH=/x; DoMaIn=EXAMPLE.COM; sEcUrE; hTtPoNlY; SaMeSiTe=lAx"
+        Local c:THttpCookie = TSetCookieParser.Parse(sc)
+        AssertNotNull(c)
+        AssertEquals("/x", c.GetPath())
+        AssertEquals("EXAMPLE.COM", c.GetDomain())
+        AssertTrue(c.IsSecure())
+        AssertTrue(c.IsHttpOnly())
+        AssertEquals("Lax", c.GetSameSite(), "Parser canonicalizes SameSite to 'Lax'")
+    End Method
+
+    Method testPartitionedFlag() { test }
+        Local c1:THttpCookie = TSetCookieParser.Parse("k=v; Partitioned")
+        AssertNotNull(c1)
+        AssertTrue(c1.IsPartitioned(), "Partitioned flag should be true when present")
+
+        Local c2:THttpCookie = TSetCookieParser.Parse("k=v; Partitioned=true")
+        AssertNotNull(c2)
+        AssertTrue(c2.IsPartitioned(), "Partitioned=true should be true")
+
+        Local c3:THttpCookie = TSetCookieParser.Parse("k=v; Partitioned=false")
+        AssertNotNull(c3)
+        AssertFalse(c3.IsPartitioned(), "Partitioned=false should be false")
+    End Method
+
+    ' --- Expires parsing ---
+
+    Method testExpiresValidFuture() { test }
+        ' Far-future RFC1123 date; should parse to > 0 and be considered not expired
+        Local sc:String = "k=v; Expires=Wed, 31 Dec 2036 23:59:59 GMT"
+        Local c:THttpCookie = TSetCookieParser.Parse(sc)
+        AssertNotNull(c)
+        Local ts:Long = c.GetExpires()
+        AssertTrue(ts > 0, "Valid Expires should return epoch seconds > 0")
+        AssertFalse(c.IsExpired(), "Future Expires should not be expired (given current time)")
+    End Method
+
+    Method testExpiresInvalid() { test }
+        Local sc:String = "k=v; Expires=not a date"
+        Local c:THttpCookie = TSetCookieParser.Parse(sc)
+        AssertNotNull(c)
+        AssertEquals(Long(0), c.GetExpires(), "Invalid Expires → 0")
+        ' Given implementation, Max-Age defaults to 0 and Expires=0 → IsExpired() returns true
+        AssertTrue(c.IsExpired(), "Invalid Expires should result in expired=true by current implementation")
+    End Method
+
+    ' ' --- Max-Age semantics ---
+
+    ' Method testMaxAgeZeroMeansExpired() { test }
+    '     Local sc:String = "k=v; Max-Age=0"
+    '     Local c:THttpCookie = TSetCookieParser.Parse(sc)
+    '     AssertNotNull(c)
+    '     AssertEquals(Long(0), c.GetMaxAge())
+    '     AssertTrue(c.IsExpired(), "Max-Age=0 should be treated as expired")
+    ' End Method
+
+    ' Method testMaxAgePositiveNotExpired() { test }
+    '     Local sc:String = "k=v; Max-Age=120"
+    '     Local c:THttpCookie = TSetCookieParser.Parse(sc)
+    '     AssertNotNull(c)
+    '     AssertEquals(Long(120), c.GetMaxAge())
+    '     ' Implementation returns not expired only if Max-Age > 0 (or Expires future)
+    '     AssertFalse(c.IsExpired(), "Positive Max-Age should not be expired at parse time")
+    ' End Method
+
+    ' Method testMaxAgeInvalidNumeric() { test }
+    '     Local sc:String = "k=v; Max-Age=abc"
+    '     Local c:THttpCookie = TSetCookieParser.Parse(sc)
+    '     AssertNotNull(c)
+    '     AssertEquals(Long(0), c.GetMaxAge(), "Invalid Max-Age parsed as 0")
+    '     AssertTrue(c.IsExpired(), "Invalid Max-Age -> expired by current implementation")
+    ' End Method
+
+    ' --- SameSite variants ---
+
+    Method testSameSiteVariants() { test }
+        Local c1:THttpCookie = TSetCookieParser.Parse("a=b; SameSite=None; Secure")
+        AssertNotNull(c1)
+        AssertEquals("None", c1.GetSameSite())
+
+        Local c2:THttpCookie = TSetCookieParser.Parse("a=b; SameSite=Lax")
+        AssertNotNull(c2)
+        AssertEquals("Lax", c2.GetSameSite())
+
+        Local c3:THttpCookie = TSetCookieParser.Parse("a=b; SameSite=Strict")
+        AssertNotNull(c3)
+        AssertEquals("Strict", c3.GetSameSite())
+    End Method
+
+    ' --- Invalid/malformed inputs ---
+
+    Method testInvalidNoName() { test }
+        AssertNull(TSetCookieParser.Parse("=value"), "Missing name should be invalid → Null")
+    End Method
+
+    Method testInvalidEmptyString() { test }
+        AssertNull(TSetCookieParser.Parse(""), "Empty string should be invalid → Null")
+    End Method
+
+    Method testInvalidJustAttributesNoPair() { test }
+        AssertNull(TSetCookieParser.Parse("Secure; HttpOnly"), "No name=value pair → Null")
+    End Method
+
+    ' --- Whitespace robustness ---
+
+    Method testWhitespaceRobustness() { test }
+        Local c:THttpCookie = TSetCookieParser.Parse("  token   =   val  ;   Path =  /p ;  Domain = example.com  ;  HttpOnly  ")
+        AssertNotNull(c)
+        AssertEquals("token", c.GetName())
+        AssertEquals("val", c.GetValue())
+        AssertEquals("/p", c.GetPath())
+        AssertEquals("example.com", c.GetDomain())
+        AssertTrue(c.IsHttpOnly())
+    End Method
+
+    ' --- Unknown/custom attributes preserved ---
+
+    Method testUnknownAttributesPreserved() { test }
+        Local c:THttpCookie = TSetCookieParser.Parse("k=v; Priority=High; Foo=Bar")
+        AssertNotNull(c)
+        AssertEquals("High", c.GetAttribute("Priority"), "Unknown attr 'Priority' should be preserved")
+        AssertEquals("Bar", c.GetAttribute("Foo"), "Arbitrary attr 'Foo' should be preserved")
+    End Method
+
+End Type

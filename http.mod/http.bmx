@@ -28,7 +28,6 @@ Import "http_url.bmx"
 Import "http_ca.bmx"
 Import "http_cookie.bmx"
 
-
 Interface ICompleteListener
 	Method OnComplete(result:THttpResult)
 End Interface
@@ -122,6 +121,7 @@ Type THttpRequest
 	Field _content:TContent
 
 	Field _sink:TSink
+	Field _cookies:TArrayList<THttpCookie> = New TArrayList<THttpCookie>
 
 	' TODO Field _cookies:THttpCookies = New THttpCookies
 
@@ -249,6 +249,11 @@ Type THttpRequest
 	End Rem
 	Method OutputStream:THttpRequest(s:TStream)
 		_sink = New TStreamSink(s)
+		Return Self
+	End Method
+
+	Method Cookie:THttpRequest(cookie:THttpCookie)
+		_cookies.Add(cookie)
 		Return Self
 	End Method
 
@@ -392,6 +397,7 @@ Type THttpClient
 	Field _followRedirects:Int = True
 
 	Field _caStore:TCAStore
+	Field _cookieStore:THttpCookieStore = New THttpCookieStore
 
 	Function Create:THttpClient()
 		Local client:THttpClient = New THttpClient
@@ -487,6 +493,9 @@ Private
 	End Function
 
 	Method Submit(request:THttpRequest, waiter:IWaiter = Null)
+
+		NormalizeReqest(request)
+
 		Local env:TRequestEnvelope = New TRequestEnvelope
 		env.client = Self
 		env.request = request
@@ -514,8 +523,8 @@ Private
 			Local ms:Int
 			_multi.multiTimeout(ms)
 
-			If ms < 0 Or ms > 5000 Then
-				ms = 1000
+			If ms < 0 Or ms > 1000 Then
+				ms = 10
 			End If
 			
 			Local numfds:Int
@@ -737,8 +746,14 @@ Private
 	Function _HeaderRead:Size_T(buffer:Byte Ptr, size:Size_T, data:Object)
 		Local context:TEasyContext = TEasyContext(data)
 
-		Local header:String = String.FromUTF8Bytes(buffer, Int(size))
-		context.response.headers.Add(header)
+		Local headerText:String = String.FromUTF8Bytes(buffer, Int(size))
+		Local header:THttpField = context.response.headers.Add(headerText)
+
+		' handle cookies
+		If header And header.Is("set-cookie") Then
+			Local url:TUrl = context.request.GetUrl()
+			context.request._client.PutCookie(url, header)
+		End If
 
 		Return size
 	End Function
@@ -762,6 +777,43 @@ Private
 				End If
 			End If
 		End If
+	End Method
+
+	Method PutCookie(url:TUrl, header:THttpField)
+		Local cookie:THttpCookie = TCookieHelper.ParseFromSetCookieHeader(header)
+		If cookie Then
+			_cookieStore.Add(url, cookie)
+		End If
+	End Method
+
+	Method NormalizeReqest(request:THttpRequest)
+
+		' add cookies
+		Local sb:TStringBuilder = ConvertCookies(request._cookies, Null)
+		
+		If Not _cookieStore.IsEmpty() Then
+			Local matchedCookies:TArrayList<THttpCookie> = _cookieStore.Match(request.GetUrl())
+			sb = ConvertCookies(matchedCookies, sb)
+		End If
+
+		If sb <> Null Then
+			request._headers.Add(EHttpHeader.Cookie, sb.ToString())
+		End If
+
+	End Method
+
+	Method ConvertCookies:TStringBuilder(cookies:TArrayList<THttpCookie>, sb:TStringBuilder)
+
+		For Local cookie:THttpCookie = EachIn cookies
+			If sb = Null Then
+				sb = New TStringBuilder
+			Else
+				sb.Append("; ")
+			End If
+			sb.Append(cookie.GetName()).Append("=").Append(cookie.GetValue())
+		Next
+
+		Return sb
 	End Method
 End Type
 

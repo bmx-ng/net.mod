@@ -174,6 +174,11 @@ Public
 		End If
 		Return ""
 	End Method
+
+	Method IsSecureScheme:Int()
+		Local scheme:String = GetScheme().ToLower()
+		Return scheme = "https" Or scheme = "wss"
+	End Method
 	
 	Method Delete()
 		If _urlPtr
