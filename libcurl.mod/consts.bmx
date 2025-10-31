@@ -1383,15 +1383,23 @@ End Rem
 Const CURLOPT_CERTINFO:Int = CURLOPTTYPE_LONG + 172
 
 Rem
-bbdoc: "name" and "pwd" to use when fetching. 
+bbdoc: CURLOPT_USERNAME sets the username to be used in protocol authentication. You should not use this option together with the (older) CURLOPT_USERPWD option.
 End Rem
 Const CURLOPT_USERNAME:Int = CURLOPTTYPE_OBJECTPOINT + 173
+
+Rem
+bbdoc: The CURLOPT_PASSWORD option should be used in conjunction with the CURLOPT_USERNAME option.
+End Rem
 Const CURLOPT_PASSWORD:Int = CURLOPTTYPE_OBJECTPOINT + 174
 
 Rem
-bbdoc: "name" and "pwd" to use with Proxy when fetching. 
+bbdoc: CURLOPT_PROXYUSERNAME sets the username to be used in protocol authentication with the proxy.
 End Rem
 Const CURLOPT_PROXYUSERNAME:Int = CURLOPTTYPE_OBJECTPOINT + 175
+
+Rem
+bbdoc: The CURLOPT_PROXYPASSWORD option should be used in conjunction with the CURLOPT_PROXYUSERNAME option.
+EndRem
 Const CURLOPT_PROXYPASSWORD:Int = CURLOPTTYPE_OBJECTPOINT + 176
 
 Rem
