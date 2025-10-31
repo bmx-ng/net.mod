@@ -98,6 +98,8 @@ Extern
 	Function bmx_curl_multi_timeout:Int(handle:Byte Ptr, timeout:Int Ptr)
 	
 	Function bmx_curl_easy_escape:String(txt:String)
+
+	Function bmx_curl_getdate:Long(date:String)
 End Extern
 
 Type TSList
