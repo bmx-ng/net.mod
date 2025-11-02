@@ -27,6 +27,9 @@ Import "../mbedtls.mod/mbedtls/include/*.h"
 Import "../libssh2.mod/libssh2/src/*.h"
 Import "../libssh2.mod/libssh2/include/*.h"
 
+Import "../../archive.mod/zlib.mod/zlib/*.h"
+Import "../../archive.mod/zstd.mod/zstd/lib/*.h"
+
 'Import "c-ares/include/*.h"
 
 Import "libcurl/lib/*.h"

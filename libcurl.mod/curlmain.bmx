@@ -170,12 +170,13 @@ Type TCurlEasy Extends TCurlHasLists
 
 	Rem
 	bbdoc: Sets a particular curl @option with the String @parameter.
+	about: By default, an empty string is treated as a NULL setting. To allow setting empty strings, set @allowEmpty to True.
 	End Rem
-	Method setOptString:Int(option:Int, parameter:String)
+	Method setOptString:Int(option:Int, parameter:String, allowEmpty:Int = False)
 		If easyHandlePtr Then
-			If parameter
+			If parameter Or allowEmpty Then
 				Local str:Byte Ptr = parameter.toUTF8String()
-				Local res:Int bmx_curl_easy_setopt_str(easyHandlePtr, option, str)
+				Local res:Int = bmx_curl_easy_setopt_str(easyHandlePtr, option, str)
 				MemFree(str)
 				Return res
 			Else

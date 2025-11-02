@@ -415,7 +415,7 @@
 #define HAVE_LIBZ 1
 
 /* Define to 1 if you have the `zstd' library (-lzstd). */
-/* #undef HAVE_LIBZSTD */
+#define HAVE_ZSTD 1
 
 /* Define to 1 if you have the <linux/tcp.h> header file. */
 /* #undef HAVE_LINUX_TCP_H */

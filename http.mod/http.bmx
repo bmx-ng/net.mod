@@ -837,7 +837,7 @@ Private
 		End If
 
 		If request._acceptCompressed Then
-			easy.setOptString(CURLOPT_ACCEPT_ENCODING, "")
+			easy.setOptString(CURLOPT_ACCEPT_ENCODING, "", True)
 		End If
 
 		If request._user Then

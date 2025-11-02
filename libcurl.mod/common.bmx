@@ -20,8 +20,8 @@
 
 SuperStrict
 
-Import Pub.zlib
-
+Import Archive.zlib
+Import Archive.zstd
 
 Import "source.bmx"
 Import "consts.bmx"
