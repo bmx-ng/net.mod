@@ -100,10 +100,11 @@ Type THttpRequest
 	Field _headers:THttpFields = New THttpFields
 
 	Field _acceptCompressed:Int = True
-	Field _connectTimeoutMS:Int = 10000
-	Field _totalTimeoutMS:Int = 30000
+	Field _connectTimeoutMs:Int = 10000
+	Field _totalTimeoutMs:Int = 0
+	Field _idleTimeoutMs:Int = 60000
 
-	Field _method:String
+	Field _method:String = "GET"
 
 	Field _url:TUrl
 	Field _scheme:String
@@ -116,15 +117,14 @@ Type THttpRequest
 	Field _followRedirects:Int = True
 	Field _user:String
 	Field _password:String
+	Field _bearerToken:String
 	Field _authMethod:EHttpAuthMethod = EHttpAuthMethod.None
 
 	Field _content:TContent
 
+	Field _verbose:Int = False
 	Field _sink:TSink
 	Field _cookies:TArrayList<THttpCookie> = New TArrayList<THttpCookie>
-
-	' TODO Field _cookies:THttpCookies = New THttpCookies
-
 
 	' completion state (filled after sync send or by engine for inspection)
 	Field _response:THttpResponse
@@ -144,55 +144,140 @@ Type THttpRequest
 		Return Self
 	End Method
 
+	Method Create:THttpRequest(client:THttpClient, url:String)
+		_client = client
+		Self._url = New TUrl(url)
+		Return Self
+	End Method
+
+	Method Create:THttpRequest(client:THttpClient, url:TUrl)
+		_client = client
+		Self._url = url
+		Return Self
+	End Method
+
+
 	' ---- fluent config ----
+	Rem
+	bbdoc: Adds a header to the HTTP request.
+	End Rem
 	Method Header:THttpRequest(key:String, value:String)
 		_headers.Add(key,value)
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Adds a header to the HTTP request.
+	End Rem
 	Method Header:THttpRequest(key:EHttpHeader, value:String)
 		_headers.Add(key,value)
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the request body for the HTTP request to the specified @text with the given content type.
+	End Rem
 	Method Body:THttpRequest(text:String, contentType:String = "text/plain; charset=utf-8")
 		_content = New TStringContent(text, contentType)
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the request body for the HTTP request to the specified input @stream with the given content type.
+	End Rem
 	Method Body:THttpRequest(stream:TStream, length:Long, contentType:String = "application/octet-stream")
 		_content = New TStreamContent(stream, length, contentType)
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the request body for the HTTP request to the specified byte array @data with the given content type.
+	End Rem
+	Method Body:THttpRequest(data:Byte[], contentType:String = "application/octet-stream")
+		_content = New TByteArrayContent(data, contentType)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Sets the request body for the HTTP request to the specified content object @content.
+	End Rem
+	Method Body:THttpRequest(content:TContent)
+		_content = content
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Sets the request body for the HTTP request to the specified bank object @bank with the given content type.
+	End Rem
+	Method Body:THttpRequest(bank:TBank, contentType:String = "application/octet-stream")
+		_content = New TBankContent(bank, contentType)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Sets the authentication method for the HTTP request.
+	End Rem
 	Method AuthMethod:THttpRequest(auth:EHttpAuthMethod)
 		_authMethod = auth
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Enables or disables acceptance of compressed responses.
+	End Rem
 	Method AcceptCompressed:THttpRequest(enable:Int)
 		_acceptCompressed = enable
 		Return Self
 	End Method
 
-	Method Timeouts:THttpRequest(connectMS:Int, totalMS:Int)
-		_connectTimeoutMS = connectMS
-		_totalTimeoutMS = totalMS
+	Rem
+	bbdoc: Sets the connection timeout for the HTTP request in milliseconds. Defaults to 10000 ms.
+	about: Overrides the client-wide connection timeout setting for this specific request.
+	End Rem
+	Method ConnectTimeout:THttpRequest(connectMs:Int)
+		_connectTimeoutMs = connectMs
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the idle timeout for the HTTP request in milliseconds. Defaults to 60000 ms.
+	about: Overrides the client-wide idle timeout setting for this specific request.
+	End Rem
+	Method IdleTimeout:THttpRequest(idleMs:Int)
+		_idleTimeoutMs = idleMs
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Sets the total timeout for the HTTP request in milliseconds. Defaults to no timeout.
+	about: Overrides the client-wide total timeout setting for this specific request.
+	End Rem
+	Method TotalTimeout:THttpRequest(totalMs:Int)
+		_totalTimeoutMs = totalMs
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Sets the URL scheme (e.g., "http" or "https").
+	End Rem
 	Method Scheme:THttpRequest(scheme:String)
 		_scheme = scheme
 		_url = null
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the host for the HTTP request.
+	End Rem
 	Method Host:THttpRequest(host:String)
 		_host = host
 		_url = null
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the port for the HTTP request.
+	End Rem
 	Method Port:THttpRequest(port:Int)
 		_port = port
 		_url = null
@@ -216,13 +301,35 @@ Type THttpRequest
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the user for HTTP authentication.
+	about: When using Kerberos V5 authentication with a Windows based server, you should specify the username part with the domain name in order
+	for the server to successfully obtain a Kerberos Ticket. If you do not then the initial part of the authentication handshake may fail.
+
+	When using NTLM, the username can be specified simply as the username without the domain name should the server be part of a single domain and forest.
+
+	To specify the domain name use either Down-Level Logon Name or UPN (User Principal Name) formats. For example `EXAMPLE\user` and `user@example.com` respectively.
+
+	Some HTTP servers (on Windows) support inclusion of the domain for Basic authentication as well.
+	End Rem
 	Method User:THttpRequest(user:String)
 		_user = user
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the password for HTTP authentication.
+	End Rem
 	Method Password:THttpRequest(password:String)
 		_password = password
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Sets a Bearer token for OAuth 2.0 authentication.
+	End Rem
+	Method BearerToken:THttpRequest(token:String)
+		_bearerToken = token
 		Return Self
 	End Method
 
@@ -239,6 +346,9 @@ Type THttpRequest
 		Return _query
 	End Method
 
+	Rem
+	bbdoc: Returns the URL scheme (e.g., "http" or "https").
+	End Rem
 	Method GetScheme:String()
 		Return _scheme
 	End Method
@@ -252,6 +362,9 @@ Type THttpRequest
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Adds a cookie to the request.
+	End Rem
 	Method Cookie:THttpRequest(cookie:THttpCookie)
 		_cookies.Add(cookie)
 		Return Self
@@ -265,8 +378,20 @@ Type THttpRequest
 		Return _url
 	End Method
 
+	Rem
+	bbdoc: Returns whether the request is set to follow HTTP redirects automatically.
+	End Rem
 	Method IsFollowingRedirects:Int()
 		Return _followRedirects
+	End Method
+
+	Rem
+	bbdoc: Enables or disables verbose output for the request.
+	about: Useful for debugging purposes.
+	End Rem
+	Method Verbose:THttpRequest(enable:Int)
+		_verbose = enable
+		Return Self
 	End Method
 
 	' ---- send ----
@@ -305,7 +430,6 @@ Type THttpRequest
 		Return Not IsSucceeded()
 	End Method
 
-
 	Private
 
 	Method BuildUrl:TUrl(withQuery:Int)
@@ -333,6 +457,7 @@ Type THttpRequest
 	End Method
 End Type
 
+' context for each easy handle in the multi
 Type TEasyContext
 	Field request:THttpRequest
 	Field response:THttpResponse
@@ -349,6 +474,7 @@ Type TEasyContext
 	End Method
 End Type
 
+' envelope for requests in the client queue
 Type TRequestEnvelope
 	Field client:THttpClient
 	Field request:THttpRequest
@@ -399,17 +525,28 @@ Type THttpClient
 	Field _caStore:TCAStore
 	Field _cookieStore:THttpCookieStore = New THttpCookieStore
 
+	Field _connectTimeoutMs:Int = 10000
+	Field _totalTimeoutMs:Int = 0
+	Field _idleTimeoutMs:Int = 60000
+
 	Function Create:THttpClient()
 		Local client:THttpClient = New THttpClient
 		client._multi = TCurlMulti.Create()
 		Return client
 	End Function
 
+	Rem
+	bbdoc: Starts the HTTP client processing thread.
+	about: This method must be called before sending any requests.
+	End Rem
 	Method Start()
 		_running = True
 		_thread = CreateThread(_ClientMain, Self)
 	End Method
 
+	Rem
+	bbdoc: Shuts down the HTTP client and cleans up resources.
+	End Rem
 	Method Shutdown()
 		If Not _running Then
 			Return
@@ -425,7 +562,7 @@ Type THttpClient
 	End Rem
 	Method Get:THttpRequest(url:String)
 		Local request:THttpRequest = New THttpRequest.Create(Self, "GET", url)
-		request.FollowRedirects(_followRedirects)
+		InitRequest(request)
 		Return request
 	End Method
 	
@@ -434,7 +571,7 @@ Type THttpClient
 	End Rem
 	Method Post:THttpRequest(url:String)
 		Local request:THttpRequest = New THttpRequest.Create(Self, "POST", url)
-		request.FollowRedirects(_followRedirects)
+		InitRequest(request)
 		Return request
 	End Method
 
@@ -443,16 +580,40 @@ Type THttpClient
 	End Rem
 	Method Put:THttpRequest(url:String)
 		Local request:THttpRequest = New THttpRequest.Create(Self, "PUT", url)
-		request.FollowRedirects(_followRedirects)
+		InitRequest(request)
 		Return request
 	End Method
 
+	Rem
+	bbdoc: Creates a new HTTP request with the specified URL.
+	about: 
+	End Rem
+	Method NewRequest:THttpRequest(url:String)
+		Local request:THttpRequest = New THttpRequest.Create(Self, url)
+		InitRequest(request)
+		Return request
+	End Method
+
+	Rem
+	bbdoc: Sets whether the client should follow HTTP redirects automatically. Defaults to True.
+	End Rem
 	Method SetFollowRedirects(follow:Int)
 		_followRedirects = follow
 	End Method
 
+	Rem
+	bbdoc: Returns whether the client is set to follow HTTP redirects automatically.
+	End Rem
 	Method IsFollowingRedirects:Int()
 		Return _followRedirects
+	End Method
+
+	Method InitRequest(request:THttpRequest)
+		' apply client-wide settings to request
+		request.FollowRedirects(_followRedirects)
+		request.IdleTimeout(_idleTimeoutMs)
+		request.ConnectTimeout(_connectTimeoutMs)
+		request.TotalTimeout(_totalTimeoutMs)
 	End Method
 
 	Rem
@@ -484,6 +645,30 @@ Type THttpClient
 		Local bytes:Byte[] = LoadByteArray(stream)
 		_caStore = New TBlobCAStore()
 		TBlobCAStore(_caStore).SetBlob(bytes)
+	End Method
+
+	Rem
+	bbdoc: Sets the connection timeout in milliseconds. Defaults to 10000 ms.
+	about: Specifies the maximum time in milliseconds that the connection phase is allowed to take.
+	End Rem
+	Method SetConnectTimeout(timeoutMs:Int)
+		_connectTimeoutMs = timeoutMs
+	End Method
+
+	Rem
+	bbdoc: Sets the total timeout in milliseconds. Defaults to no timeout.
+	about: Specifies the maximum time in milliseconds that the entire request is allowed to take.
+	End Rem
+	Method SetTotalTimeout(timeoutMs:Int)
+		_totalTimeoutMs = timeoutMs
+	End Method
+
+	Rem
+	bbdoc: Sets the idle timeout in milliseconds. Defaults to 60000 ms.
+	about: Specifies the maximum time in milliseconds that the request is allowed to remain idle.
+	End Rem
+	Method SetIdleTimeout(timeoutMs:Int)
+		_idleTimeoutMs = timeoutMs
 	End Method
 
 Private
@@ -601,6 +786,7 @@ Private
 	Method PrepareContext:TEasyContext(env:TRequestEnvelope)
 		Local request:THttpRequest = env.request
 		Local context:TEasyContext = New TEasyContext
+
 		context.request = request
 		context.response = New THttpResponse
 		context.waiter = env.waiter
@@ -634,6 +820,26 @@ Private
 
 		easy.setOptInt(CURLOPT_FOLLOWLOCATION, request.IsFollowingRedirects())
 
+		easy.setOptInt(CURLOPT_CONNECTTIMEOUT_MS, request._connectTimeoutMs)
+		easy.setOptInt(CURLOPT_TIMEOUT_MS, request._totalTimeoutMs)
+
+		If request._idleTimeoutMs > 0 Then
+			Local secs:Int = (request._idleTimeoutMs + 999) / 1000
+			If secs < 1 Then
+				secs = 1
+			End If
+			easy.setOptInt(CURLOPT_LOW_SPEED_LIMIT, 1) ' 1 byte/s
+			easy.setOptInt(CURLOPT_LOW_SPEED_TIME,  secs)
+		End If
+
+		If request._verbose Then
+			easy.setOptInt(CURLOPT_VERBOSE, 1)
+		End If
+
+		If request._acceptCompressed Then
+			easy.setOptString(CURLOPT_ENCODING, "")
+		End If
+
 		If request._user Then
 			easy.setOptString(CURLOPT_USERNAME, request._user)
 		End If
@@ -642,9 +848,11 @@ Private
 			easy.setOptString(CURLOPT_PASSWORD, request._password)
 		End If
 
-		easy.setOptInt(CURLOPT_HTTPAUTH, request._authMethod.Ordinal())
+		If request._bearerToken Then
+			easy.setOptString(CURLOPT_XOAUTH2_BEARER, request._bearerToken)
+		End If
 
-		'easy.setOptInt(CURLOPT_VERBOSE, 1)
+		easy.setOptInt(CURLOPT_HTTPAUTH, request._authMethod.Ordinal())
 
 		' Method + body handling
 		Local hasBody:Int = (request._content <> Null)
@@ -1041,5 +1249,24 @@ Type TBytePtrContent Extends TContent
 		MemCopy(buffer, _data + _pos, toRead)
 		_pos :+ toRead
 		Return toRead
+	End Method
+End Type
+
+Type TByteArrayContent Extends TBytePtrContent
+	Field _dataArray:Byte[]
+
+	Method New(data:Byte[], contentType:String = Null)
+		Super.New(data, Size_T(data.Length), contentType)
+		_dataArray = data
+	End Method
+
+End Type
+
+Type TBankContent Extends TBytePtrContent
+	Field _bank:TBank
+
+	Method New(bank:TBank, contentType:String = Null)
+		Super.New(bank.Buf(), Size_T(bank.Size()), contentType)
+		_bank = bank
 	End Method
 End Type
