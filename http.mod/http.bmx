@@ -837,7 +837,7 @@ Private
 		End If
 
 		If request._acceptCompressed Then
-			easy.setOptString(CURLOPT_ENCODING, "")
+			easy.setOptString(CURLOPT_ACCEPT_ENCODING, "")
 		End If
 
 		If request._user Then
@@ -909,11 +909,6 @@ Private
 
 			bmx_curl_easy_setopt_slist(easy.easyHandlePtr, CURLOPT_HTTPHEADER, context.slist.slist)
 		End If
-
-		' timeouts & compression
-		' curl_easy_setopt_int(ctx.easy, CURLOPT_CONNECTTIMEOUT_MS, req.connectTimeoutMS)
-		' curl_easy_setopt_int(ctx.easy, CURLOPT_TIMEOUT_MS, req.totalTimeoutMS)
-		' If req.acceptCompressed Then curl_easy_setopt_string(ctx.easy, CURLOPT_ACCEPT_ENCODING, "")
 
 		' response sink
 		If request._sink <> Null Then

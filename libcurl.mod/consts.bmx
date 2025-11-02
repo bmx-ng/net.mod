@@ -932,7 +932,7 @@ information on the Accept-Encoding header.
 </p>
 <p>
 Currently, libcurl only understands how to process responses that use the
-"deflate" or "gzip" Content-Encoding, so the only values for #CURLOPT_ENCODING
+"deflate" or "gzip" Content-Encoding, so the only values for #CURLOPT_ACCEPT_ENCODING
 that will work (besides "<b>identity</b>", which does nothing) are "<b>deflate</b>" and
 "<b>gzip</b>". If a response is encoded using the "compress" or other methods, libcurl will
 return an error indicating that the response could not be decoded.  If
@@ -941,13 +941,13 @@ zero-length string, then an Accept-Encoding header containing all supported
 encodings will be generated.
 </p>
 <p>
-The #CURLOPT_ENCODING must be set to any non-NULL value for content to be
+The #CURLOPT_ACCEPT_ENCODING must be set to any non-NULL value for content to be
 automatically decoded.  If it is not set and the server still sends encoded
 content (despite not having been asked), the data is returned in its raw form
 and the Content-Encoding type is not checked.
 </p>
 End Rem
-Const CURLOPT_ENCODING:Int = CURLOPTTYPE_STRINGPOINT + 102
+Const CURLOPT_ACCEPT_ENCODING:Int = CURLOPTTYPE_STRINGPOINT + 102
 
 Rem
 bbdoc: See the #setPrivate method for details.
