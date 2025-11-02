@@ -22,6 +22,7 @@ SuperStrict
 
 Import Archive.zlib
 Import Archive.zstd
+Import Archive.Brotli
 
 Import "source.bmx"
 Import "consts.bmx"

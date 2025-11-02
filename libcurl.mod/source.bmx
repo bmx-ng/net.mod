@@ -29,6 +29,7 @@ Import "../libssh2.mod/libssh2/include/*.h"
 
 Import "../../archive.mod/zlib.mod/zlib/*.h"
 Import "../../archive.mod/zstd.mod/zstd/lib/*.h"
+Import "../../archive.mod/brotli.mod/brotli/c/include/*.h"
 
 'Import "c-ares/include/*.h"
 
