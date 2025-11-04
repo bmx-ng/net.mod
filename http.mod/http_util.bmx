@@ -199,6 +199,7 @@ Enum EHttpMethod
 	Options
 	Patch
 	Trace
+	Connect
 End Enum
 
 Enum EHttpHeader

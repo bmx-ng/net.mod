@@ -1499,6 +1499,9 @@ Type TCurlMulti
 		End If
 	End Method
 
+	Rem
+	bbdoc: Polls all file descriptors in the multi stack, waiting for action or timeout.
+	End Rem
 	Method multiPoll:Int(timeout_ms:Int, numfds:Int Var)
 		If multiHandlePtr Then
 		
@@ -1507,10 +1510,24 @@ Type TCurlMulti
 		End If
 	End Method
 
+	Rem
+	bbdoc: Returns the maximum number of milliseconds to wait for action on the multi stack.
+	End Rem
 	Method multiTimeout:Int(timeout_ms:Int Var)
 		If multiHandlePtr Then
 		
 			Return bmx_curl_multi_timeout(multiHandlePtr, Varptr timeout_ms)
+		
+		End If
+	End Method
+
+	Rem
+	bbdoc: Wakes up a multi handle that is sleeping in #multiSelect or #multiPoll.
+	End Rem
+	Method multiWakeup:Int()
+		If multiHandlePtr Then
+		
+			Return curl_multi_wakeup(multiHandlePtr)
 		
 		End If
 	End Method

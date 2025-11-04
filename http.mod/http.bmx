@@ -22,6 +22,7 @@ SuperStrict
 Module Net.Http
 
 Import BRL.Stream
+Import BRL.Math
 
 Import "http_util.bmx"
 Import "http_url.bmx"
@@ -104,7 +105,9 @@ Type THttpRequest
 	Field _totalTimeoutMs:Int = 0
 	Field _idleTimeoutMs:Int = 60000
 
-	Field _method:String = "GET"
+	Field _retry:TRetryPolicy
+
+	Field _method:EHttpMethod = EHttpMethod.Get
 
 	Field _url:TUrl
 	Field _scheme:String
@@ -130,14 +133,14 @@ Type THttpRequest
 	Field _response:THttpResponse
 	Field _listener:ICompleteListener
 
-	Method Create:THttpRequest(client:THttpClient, _method:String, url:TUrl)
+	Method Create:THttpRequest(client:THttpClient, _method:EHttpMethod, url:TUrl)
 		_client = client
 		Self._method = _method
 		Self._url = url
 		Return Self
 	End Method
 
-	 Method Create:THttpRequest(client:THttpClient, _method:String, url:String)
+	 Method Create:THttpRequest(client:THttpClient, _method:EHttpMethod, url:String)
 		_client = client
 		Self._method = _method
 		Self._url = New TUrl(url)
@@ -223,7 +226,7 @@ Type THttpRequest
 	End Method
 
 	Rem
-	bbdoc: Enables or disables acceptance of compressed responses.
+	bbdoc: Enables or disables acceptance of compressed responses. Defaults to enabled.
 	End Rem
 	Method AcceptCompressed:THttpRequest(enable:Int)
 		_acceptCompressed = enable
@@ -335,6 +338,14 @@ Type THttpRequest
 
 	Method FollowRedirects:THttpRequest(follow:Int)
 		_followRedirects = follow
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Sets the retry policy for the HTTP request.
+	End Rem
+	Method WithRetry:THttpRequest(policy:TRetryPolicy)
+		_retry = policy
 		Return Self
 	End Method
 
@@ -467,6 +478,8 @@ Type TEasyContext
 
 	Field slist:TSlist
 
+	Field env:TRequestEnvelope
+
 	Method Delete()
 		If slist Then
 			slist.Free()
@@ -480,6 +493,7 @@ Type TRequestEnvelope
 	Field request:THttpRequest
 	Field context:TEasyContext
 	Field waiter:IWaiter
+	Field retry:TRetryState
 End Type
 
 Interface IWaiter
@@ -520,6 +534,7 @@ Type THttpClient
 	Field _thread:TThread
 	Field _running:Int
 	Field _inQueue:TConcurrentQueue<TRequestEnvelope> = New TConcurrentQueue<TRequestEnvelope>
+	Field _retryQueue:TMinHeap<TRequestEnvelope> = New TMinHeap<TRequestEnvelope>(new TTimeComparator)
 	Field _followRedirects:Int = True
 
 	Field _caStore:TCAStore
@@ -528,6 +543,8 @@ Type THttpClient
 	Field _connectTimeoutMs:Int = 10000
 	Field _totalTimeoutMs:Int = 0
 	Field _idleTimeoutMs:Int = 60000
+
+	Field _retryDefault:TRetryPolicy = New TRetryPolicy
 
 	Function Create:THttpClient()
 		Local client:THttpClient = New THttpClient
@@ -561,7 +578,7 @@ Type THttpClient
 	bbdoc: Creates a new GET request for the specified URL.
 	End Rem
 	Method Get:THttpRequest(url:String)
-		Local request:THttpRequest = New THttpRequest.Create(Self, "GET", url)
+		Local request:THttpRequest = New THttpRequest.Create(Self, EHttpMethod.Get, url)
 		InitRequest(request)
 		Return request
 	End Method
@@ -570,7 +587,7 @@ Type THttpClient
 	bbdoc: Creates a new POST request for the specified URL.
 	End Rem
 	Method Post:THttpRequest(url:String)
-		Local request:THttpRequest = New THttpRequest.Create(Self, "POST", url)
+		Local request:THttpRequest = New THttpRequest.Create(Self, EHttpMethod.Post, url)
 		InitRequest(request)
 		Return request
 	End Method
@@ -579,7 +596,7 @@ Type THttpClient
 	bbdoc: Creates a new PUT request for the specified URL.
 	End Rem
 	Method Put:THttpRequest(url:String)
-		Local request:THttpRequest = New THttpRequest.Create(Self, "PUT", url)
+		Local request:THttpRequest = New THttpRequest.Create(Self, EHttpMethod.Put, url)
 		InitRequest(request)
 		Return request
 	End Method
@@ -606,6 +623,10 @@ Type THttpClient
 	End Rem
 	Method IsFollowingRedirects:Int()
 		Return _followRedirects
+	End Method
+
+	Method SetRetryPolicy(policy:TRetryPolicy)
+		_retryDefault = policy
 	End Method
 
 	Method InitRequest(request:THttpRequest)
@@ -685,7 +706,11 @@ Private
 		env.client = Self
 		env.request = request
 		env.waiter = waiter
+		env.retry = New TRetryState
+		env.retry.attempts = 1
 		_inQueue.Push env
+
+		_multi.multiWakeup() ' wake up the multi thread
 	End Method
 
 	Method Run()
@@ -703,17 +728,26 @@ Private
 				env = _inQueue.TryPop()
 			Wend
 
+			' admit scheduled retries that are due
+			AdmitDueRetries()
+
 			_multi.multiPerform(still)
 
 			Local ms:Int
 			_multi.multiTimeout(ms)
 
 			If ms < 0 Or ms > 1000 Then
-				ms = 10
+				ms = 100
 			End If
-			
+
+			Local retryMs:Int = NextRetryDeltaMs()
+			Local pollMs:Int = Min(ms, retryMs)
+			If pollMs < 1 Then
+				pollMs = 1   ' avoid busy loop
+			End If
+
 			Local numfds:Int
-			_multi.multiPoll(Int(ms), numfds)
+			_multi.multiPoll(pollMs, numfds)
 
 			Local msg:TCurlMultiMsg
 			Repeat
@@ -741,6 +775,42 @@ Private
 					ctx.response.status = info.responseCode()
 					ctx.response.effectiveUrl = info.effectiveURL()
 
+					_multi.multiRemove(easy)
+					
+					If ctx.slist Then
+						ctx.slist.Free()
+					End If
+
+					easy.cleanup()
+
+					Local policy:TRetryPolicy
+					If ctx.request._retry Then
+						policy = ctx.request._retry
+					Else
+						policy = _retryDefault
+					End If
+
+					If policy And policy.maxAttempts > 0 Then
+						env = ctx.env
+
+						If ShouldRetry(ctx, policy) And ctx.sink.IsReplaySafe() And env.retry.attempts < policy.maxAttempts Then
+
+							Local sleepMs:Int = ComputeRetrySleepMs(ctx, policy, env.retry.attempts)
+							' Can we replay?
+							If IsReplaySafe(ctx.request, policy) Then
+
+								PrepareForReplay(ctx.request)
+								ctx.sink.AbortAttempt()
+
+								ScheduleRetry(env, sleepMs)
+								Continue ' do not deliver result yet
+							End If
+						End If
+					End If
+
+					' success or no more retries: commit
+					ctx.sink.CommitAttempt()
+
 					' finalize sinks
 					If TMemorySink(ctx.sink) Then
 						ctx.response.body = TMemorySink(ctx.sink).GetData()
@@ -749,13 +819,7 @@ Private
 						ctx.response.bytesReceived = TStreamSink(ctx.sink).total
 					End If
 
-					_multi.multiRemove(easy)
-					
-					If ctx.slist Then
-						ctx.slist.Free()
-					End If
-
-					easy.cleanup()
+					' deliver result
 
 					Local result:THttpResult = New THttpResult
 					result.request = ctx.request
@@ -783,6 +847,40 @@ Private
 		Forever
 	End Method
 
+	Method ScheduleRetry(env:TRequestEnvelope, sleepMs:Int)
+		env.retry.attempts :+ 1
+		env.context = Null
+		env.retry.nextAtMS = CurrentUnixTime() + Long(Max(0, sleepMs))
+		_retryQueue.Push(env)
+		' wake the poller
+		_multi.multiWakeup()
+	End Method
+
+	Method AdmitDueRetries()
+		Local now:ULong = CurrentUnixTime()
+		While Not _retryQueue.IsEmpty()
+			Local peek:TRequestEnvelope = _retryQueue.Peek()
+			If peek.retry.nextAtMS > now Then
+				' not yet ready
+				Exit
+			End If
+			_retryQueue.Pop()
+			' ready: prepare and add handle
+			Local ctx:TEasyContext = PrepareContext(peek)
+			peek.context = ctx
+		Wend
+	End Method
+
+	Method NextRetryDeltaMs:Int()
+		If _retryQueue.IsEmpty() Then
+			Return 1000000000 ' effectively “infinite”
+		End If
+		
+		Local env:TRequestEnvelope = _retryQueue.Peek()
+		Local delta:Int = Int(Max(0:Long, env.retry.nextAtMS - Long(CurrentUnixTime())))
+		Return delta
+	End Method
+
 	Method PrepareContext:TEasyContext(env:TRequestEnvelope)
 		Local request:THttpRequest = env.request
 		Local context:TEasyContext = New TEasyContext
@@ -791,6 +889,7 @@ Private
 		context.response = New THttpResponse
 		context.waiter = env.waiter
 		context.easy = env.client._multi.newEasy()
+		context.env = env
 
 		If Not context.easy Then
 			Local reponse:THttpResponse = New THttpResponse
@@ -857,17 +956,17 @@ Private
 		' Method + body handling
 		Local hasBody:Int = (request._content <> Null)
 		Select request._method
-			Case "GET", "HEAD", "DELETE"
-				If request._method = "HEAD" Then
+			Case EHttpMethod.Get, EHttpMethod.Head, EHttpMethod.Delete
+				If request._method = EHttpMethod.Head Then
 					easy.setOptInt(CURLOPT_NOBODY, 1)
 				Else
 					easy.setOptInt(CURLOPT_HTTPGET, 1)
 				End If
 				If hasBody Then ' uncommon but allowed for DELETE
-					easy.setOptString(CURLOPT_CUSTOMREQUEST, request._method)
+					easy.setOptString(CURLOPT_CUSTOMREQUEST, THttpHelper.HttpMethodToString(request._method))
 					easy.setOptInt(CURLOPT_UPLOAD, 1)
 				End If
-			Case "POST"
+			Case EHttpMethod.Post
 				easy.setOptInt(CURLOPT_POST, 1)
 
 				If hasBody Then
@@ -881,7 +980,7 @@ Private
 					easy.setOptLong(CURLOPT_POSTFIELDSIZE, 0)
 				End If
 			Default ' PUT, PATCH, etc.
-				easy.setOptString(CURLOPT_CUSTOMREQUEST, request._method)
+				easy.setOptString(CURLOPT_CUSTOMREQUEST, THttpHelper.HttpMethodToString(request._method))
 
 				If hasBody Then
 					easy.setOptInt(CURLOPT_UPLOAD, 1)
@@ -916,6 +1015,7 @@ Private
 		Else
 		   context.sink = New TMemorySink
 		End If
+		context.sink.BeginAttempt()
 
 		' response callback
 		easy.setWriteCallback(_ResponseWrite, context)
@@ -1018,7 +1118,103 @@ Private
 
 		Return sb
 	End Method
+
 End Type
+
+Private
+Function IsReplaySafe:Int(request:THttpRequest, policy:TRetryPolicy)
+	If request._method = EHttpMethod.Get Or request._method = EHttpMethod.Head Then
+		Return True
+	End If
+	If request._method = EHttpMethod.Post And policy.allowPostReplay And request._content And request._content.CanReplay() Then
+		Return True
+	End If
+	If (request._method = EHttpMethod.Put Or request._method = EHttpMethod.Delete Or request._method = EHttpMethod.Options Or request._method = EHttpMethod.Trace) Then
+		If Not request._content Then
+			Return True
+		End If
+		Return request._content.CanReplay()
+	End If
+	Return False
+End Function
+
+Function PrepareForReplay(request:THttpRequest)
+	If request._content Then
+		If Not request._content.Rewind() Then
+			Local content:TContent = request._content.Clone()
+			If content Then
+				request._content = content
+			Else
+				' cannot replay; let caller handle
+			End If
+		End If
+	End If
+End Function
+
+Function ShouldRetry:Int(ctx:TEasyContext, policy:TRetryPolicy)
+	Local req:THttpRequest = ctx.request
+	Local res:THttpResponse = ctx.response
+
+	' method allowed?
+	If Not policy.allowMethods.Contains(req._method) Then
+		If Not (req._method = EHttpMethod.Post And policy.allowPostReplay) Then
+			Return False
+		End If
+	End If
+
+	' transient curl code?
+	If res.curlCode <> 0 Then
+		Return policy.retryCurlCodes.Contains(res.curlCode)
+	End If
+
+	' HTTP status
+	If res.status >= 400 Then
+		If policy.retryStatuses.Contains(res.status) Then
+			' Retry-After?
+			If policy.respectRetryAfter Then
+				Local h:String = ctx.response.headers.GetFirst("Retry-After")
+				If h Then
+					Return True ' has Retry-After header
+				End If
+			End If
+			Return True
+		End If
+	End If
+
+	Return False
+End Function
+
+Function ComputeRetrySleepMs:Int(context:TEasyContext, policy:TRetryPolicy, attempt:Int)
+	' Retry-After first
+	If policy.respectRetryAfter And context.response And context.response.headers Then
+		Local ra:String = context.response.headers.GetFirst("Retry-After")
+		If ra Then
+			Local secs:Float
+			Local raVal:Int = Int(ra.Trim())
+			If raVal > 0 Then
+				secs = Float(raVal)
+			Else
+				Local t:Long = bmx_curl_getdate(ra) ' returns epoch seconds or -1
+				If t > 0 Then
+					secs = Max(0.0, Float(t - (CurrentUnixTime()/1000)))
+				End If
+			End If
+			If secs > 0 Then
+				Return Int(Min(secs, policy.maxBackoffSec) * 1000.0)
+			End If
+		End If
+	End If
+
+	' Exponential backoff with jitter
+	Local base:Float = policy.backoffFactor
+	If base <= 0.0 Then Return 0
+	Local exp:Float = base * (2.0 ^ (attempt - 1))
+	Local cap:Float = Min(exp, policy.maxBackoffSec)
+	Local jitter:Float = (Sin(Float(CurrentUnixTime() Mod 1000) / 1000.0 * 3.14159 * 2.0) + 1.0) / 2.0 * cap
+	Return Int(jitter * 1000.0)
+End Function
+
+Public
 
 ' Response sinks
 Type TSink Abstract
@@ -1026,6 +1222,20 @@ Type TSink Abstract
 	Method Write:Size_T(buffer:Byte Ptr, size:Size_T) Abstract
 	Method Close()
 	End Method
+
+	Method BeginAttempt() ' prepare to receive a new response
+	End Method
+
+	Method AbortAttempt()  ' discard partial data from this attempt
+	End Method
+
+	Method CommitAttempt() ' finalize (rename temp file, etc.)
+	End Method
+
+	Method IsReplaySafe:Int()
+		Return True
+	End Method
+
 End Type
 
 Type TMemorySink Extends TSink
@@ -1058,6 +1268,11 @@ Type TMemorySink Extends TSink
 		End If
 		Return Null
 	End Method
+
+	Method BeginAttempt() Override
+		size = 0
+	End Method
+
 End Type
 
 Type TStreamSink Extends TSink
@@ -1076,12 +1291,104 @@ Type TStreamSink Extends TSink
 		total :+ wrote
 		Return wrote
 	End Method
+
+	Method IsReplaySafe:Int() Override
+		Return False
+	End Method
+
+	Method BeginAttempt() Override
+		total = 0
+	End Method
+End Type
+
+Type TMinHeap<T>
+	Field _data:TArrayList<T> = New TArrayList<T>
+	Field _comparer:IComparator<T>
+
+	Method New(comparer:IComparator<T>)
+		Self._comparer = comparer
+	End Method
+
+	Method Push(item:T)
+		_data.Add(item)
+		_SiftUp(_data.Count() - 1)
+	End Method
+
+	Method Pop:T()
+
+		If _data.IsEmpty() Then
+			Return Null
+		End If
+		Local result:T = _data[0]
+		_data[0] = _data[_data.Count() - 1]
+		_data.RemoveLast()
+		_SiftDown(0)
+		Return result
+	End Method
+
+	Method Peek:T()
+		If _data.IsEmpty() Then
+			Return Null
+		End If
+		Return _data[0]
+	End Method
+
+	Method IsEmpty:Int()
+		Return _data.IsEmpty()
+	End Method
+
+	Private
+
+	Method _SiftUp(index:Int)
+		While index > 0
+			Local parent:Int = (index - 1) / 2
+			If _comparer.Compare(_data[index], _data[parent]) < 0 Then
+				Local temp:T = _data[index]
+				_data[index] = _data[parent]
+				_data[parent] = temp
+				index = parent
+			Else
+				Exit
+			End If
+		Wend
+	End Method
+
+	Method _SiftDown(index:Int)
+		Local length:Int = _data.Count()
+		While True
+			Local left:Int = index * 2 + 1
+			Local right:Int = index * 2 + 2
+			Local smallest:Int = index
+
+			If left < length And _comparer.Compare(_data[left], _data[smallest]) < 0 Then
+				smallest = left
+			End If
+			If right < length And _comparer.Compare(_data[right], _data[smallest]) < 0 Then
+				smallest = right
+			End If
+
+			If smallest <> index Then
+				Local temp:T = _data[index]
+				_data[index] = _data[smallest]
+				_data[smallest] = temp
+				index = smallest
+			Else
+				Exit
+			End If
+		Wend
+	End Method
+End Type
+
+Type TTimeComparator Implements IComparator<TRequestEnvelope>
+	Method Compare:Int(a:TRequestEnvelope, b:TRequestEnvelope) Override
+		Return a.retry.nextAtMS - b.retry.nextAtMS
+	End Method
 End Type
 
 Type TConcurrentQueue<T>
 	Field _lock:TMutex = CreateMutex()
 	Field _cv:TCondVar = CreateCondVar()
-	Field _q:TList = New TList
+	Field _q:TLinkedList<T> = New TLinkedList<T>
 	Field _closed:Int
 
 	Method Push(item:T)
@@ -1109,7 +1416,7 @@ Type TConcurrentQueue<T>
 		Wend
 		Local v:T
 		If Not _q.IsEmpty() Then
-			v = T(_q.RemoveFirst())
+			v = _q.RemoveFirst()
 		End If
 		UnlockMutex _lock
 		Return v
@@ -1119,7 +1426,7 @@ Type TConcurrentQueue<T>
 		LockMutex _lock
 		Local v:T
 		If Not _q.IsEmpty() Then
-			v = T(_q.RemoveFirst())
+			v = _q.RemoveFirst()
 		End If
 		UnlockMutex _lock
 		Return v
@@ -1147,6 +1454,18 @@ Type TContent Abstract
 
 	' returns number of bytes read, or 0 on EOF
 	Method Read:Size_T(buffer:Byte Ptr, size:Size_T) Abstract
+
+	Method CanReplay:Int()
+		Return False
+	End Method
+
+	Method Rewind:Int()
+		Return False
+	End Method
+
+	Method Clone:TContent()
+		Return Null
+	End Method
 
 End Type
 
@@ -1184,6 +1503,19 @@ Type TStringContent Extends TContent
 		Return toRead
 	End Method
 
+	Method CanReplay:Int() Override
+		Return True
+	End Method
+
+	Method Rewind:Int() Override
+		_pos = 0
+		Return True
+	End Method
+
+	Method Clone:TContent() Override
+		Return New TStringContent(data, _contentType)
+	End Method
+
 	Method Delete()
 		If _data Then
 			MemFree(_data)
@@ -1211,6 +1543,20 @@ Type TStreamContent Extends TContent
 	Method Read:Size_T(buffer:Byte Ptr, size:Size_T) Override
 		Return _stream.Read(buffer, size)
 	End Method
+
+	Method CanReplay:Int() Override
+		Return _stream.Size() <> -1
+	End Method
+
+	Method Rewind:Int() Override
+		_stream.Seek(0, SEEK_SET_)
+		Return True
+	End Method
+
+	Method Clone:TContent() Override
+		Return New TStreamContent(_stream, _length, _contentType)
+	End Method
+
 End Type
 
 Type TBytePtrContent Extends TContent
@@ -1245,6 +1591,20 @@ Type TBytePtrContent Extends TContent
 		_pos :+ toRead
 		Return toRead
 	End Method
+
+	Method CanReplay:Int() Override
+		Return True
+	End Method
+
+	Method Rewind:Int() Override
+		_pos = 0
+		Return True
+	End Method
+
+	Method Clone:TContent() Override
+		Return New TBytePtrContent(_data, _size, _contentType)
+	End Method
+
 End Type
 
 Type TByteArrayContent Extends TBytePtrContent
@@ -1253,6 +1613,10 @@ Type TByteArrayContent Extends TBytePtrContent
 	Method New(data:Byte[], contentType:String = Null)
 		Super.New(data, Size_T(data.Length), contentType)
 		_dataArray = data
+	End Method
+
+	Method Clone:TContent() Override
+		Return New TByteArrayContent(_dataArray, _contentType)
 	End Method
 
 End Type
@@ -1264,4 +1628,54 @@ Type TBankContent Extends TBytePtrContent
 		Super.New(bank.Buf(), Size_T(bank.Size()), contentType)
 		_bank = bank
 	End Method
+
+	Method Clone:TContent() Override
+		Return New TBankContent(_bank, _contentType)
+	End Method
+
+End Type
+
+Rem
+bbdoc: Retry policy configuration for HTTP requests.
+about: Defines the parameters for retrying HTTP requests in case of transient failures.
+End Rem
+Type TRetryPolicy
+	Rem
+	bbdoc: Maximum number of attempts for a request. A value of 0 disables retries.
+	about: This includes the initial attempt. For example, a value of 3 allows for 2 retries after the first attempt.
+	End rem
+	Field maxAttempts:Int = 0
+	Rem
+	bbdoc: Base backoff factor in seconds for exponential backoff calculation.
+	about: The backoff time for each retry is calculated as backoffFactor * (2 ^ (attempt - 1)), capped by maxBackoffSec.
+	End Rem
+	Field backoffFactor:Float = 0.25
+	Rem
+	bbdoc: Maximum backoff time in seconds between retries.
+	about: This caps the exponential backoff time to avoid excessively long waits.
+	End Rem
+	Field maxBackoffSec:Float = 30.0
+	Rem
+	bbdoc: Whether to respect the Retry-After header from server responses.
+	about: If set to True, the client will wait for the duration specified in the Retry-After header before retrying.
+	End Rem
+	Field respectRetryAfter:Int = True
+	Rem
+	bbdoc: Whether to allow retries for POST requests if the request body is replayable.
+	about: If set to True, POST requests with replayable bodies can be retried according to transient failures.
+	End Rem
+	Field allowPostReplay:Int = False
+
+	' which methods/statuses/curlcodes are retryable
+	Field allowMethods:TSet<EHttpMethod> = New TSet<EHttpMethod>.FromArray([EHttpMethod.Get, EHttpMethod.Head, EHttpMethod.Put, EHttpMethod.Delete, EHttpMethod.Options, EHttpMethod.Trace])
+	Field retryStatuses:TSet<Int> = New TSet<Int>.FromArray([429,502,503,504])
+	Field retryCurlCodes:TSet<Int> = New TSet<Int>.FromArray([ ..
+		CURLE_OPERATION_TIMEDOUT, CURLE_COULDNT_CONNECT,
+		CURLE_RECV_ERROR, CURLE_SEND_ERROR, CURLE_GOT_NOTHING,
+		CURLE_PARTIAL_FILE ])
+End Type
+
+Type TRetryState
+	Field attempts:Int          ' starts at 1 for first try
+	Field nextAtMS:Long         ' scheduled retry time (ms since MilliSecs base)
 End Type
