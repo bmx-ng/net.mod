@@ -20,8 +20,9 @@
 
 SuperStrict
 
-Import Pub.zlib
-
+Import Archive.zlib
+Import Archive.zstd
+Import Archive.Brotli
 
 Import "source.bmx"
 Import "consts.bmx"
@@ -62,6 +63,7 @@ Extern
 	Function curl_multi_add_handle:Int(handle:Byte Ptr, easy:Byte Ptr)
 	Function curl_multi_perform:Int(handle:Byte Ptr, running:Int Ptr)
 	Function curl_multi_info_read:Byte Ptr(handle:Byte Ptr, queuesize:Int Ptr)
+	Function curl_multi_wakeup:Int(handle:Byte Ptr)
 	
 	Function bmx_curl_easy_setopt_int:Int(handle:Byte Ptr, option:Int, param:Int)
 	Function bmx_curl_easy_setopt_str:Int(handle:Byte Ptr, option:Int, param:Byte Ptr)
@@ -98,6 +100,8 @@ Extern
 	Function bmx_curl_multi_timeout:Int(handle:Byte Ptr, timeout:Int Ptr)
 	
 	Function bmx_curl_easy_escape:String(txt:String)
+
+	Function bmx_curl_getdate:Long(date:String)
 End Extern
 
 Type TSList

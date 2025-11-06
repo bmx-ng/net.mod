@@ -241,3 +241,10 @@ CURLMcode bmx_curl_multi_timeout(CURLM * multi, int * timeout) {
 	*timeout = (int)t;
 	return res;
 }
+
+BBLONG bmx_curl_getdate(BBString * date) {
+	unsigned char * d = (unsigned char*)bbStringToUTF8String(date);
+	time_t t = curl_getdate((const char*)d, NULL);
+	bbMemFree(d);
+	return (BBLONG)t;
+}

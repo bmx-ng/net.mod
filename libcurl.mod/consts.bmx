@@ -932,7 +932,7 @@ information on the Accept-Encoding header.
 </p>
 <p>
 Currently, libcurl only understands how to process responses that use the
-"deflate" or "gzip" Content-Encoding, so the only values for #CURLOPT_ENCODING
+"deflate" or "gzip" Content-Encoding, so the only values for #CURLOPT_ACCEPT_ENCODING
 that will work (besides "<b>identity</b>", which does nothing) are "<b>deflate</b>" and
 "<b>gzip</b>". If a response is encoded using the "compress" or other methods, libcurl will
 return an error indicating that the response could not be decoded.  If
@@ -941,13 +941,13 @@ zero-length string, then an Accept-Encoding header containing all supported
 encodings will be generated.
 </p>
 <p>
-The #CURLOPT_ENCODING must be set to any non-NULL value for content to be
+The #CURLOPT_ACCEPT_ENCODING must be set to any non-NULL value for content to be
 automatically decoded.  If it is not set and the server still sends encoded
 content (despite not having been asked), the data is returned in its raw form
 and the Content-Encoding type is not checked.
 </p>
 End Rem
-Const CURLOPT_ENCODING:Int = CURLOPTTYPE_STRINGPOINT + 102
+Const CURLOPT_ACCEPT_ENCODING:Int = CURLOPTTYPE_STRINGPOINT + 102
 
 Rem
 bbdoc: See the #setPrivate method for details.
@@ -2342,7 +2342,7 @@ Rem
 bbdoc: Error code - Operation timeout.
 about: The specified time-out period was reached according to the conditions.
 End Rem
-Const CURLE_OPERATION_TIMEOUTED:Int = 28
+Const CURLE_OPERATION_TIMEDOUT:Int = 28
 Rem
 bbdoc: Error code - The FTP PORT command returned error.
 about: This mostly happen when you haven't specified a good enough address for libcurl to use.
@@ -2587,6 +2587,42 @@ Rem
 bbdoc: Error code - Stream error in HTTP/2 framing layer.
 End Rem
 Const CURLE_HTTP2_STREAM:Int = 92
+Rem
+bbdoc: Error code - An API function was called from inside a callback.
+End Rem
+Const CURLE_RECURSIVE_API_CALL:Int = 93
+Rem
+bbdoc: Error code - An authentication function returned an error.
+End Rem
+Const CURLE_AUTH_ERROR:Int = 94
+Rem
+bbdoc: Error code - An HTTP/3 layer problem.
+End Rem
+Const CURLE_HTTP3:Int = 95
+Rem
+bbdoc: Error code - A QUIC connection error.
+End Rem
+Const CURLE_QUIC_CONNECT_ERROR:Int = 96
+Rem
+bbdoc: Error code - A proxy handshake error.
+End Rem
+Const CURLE_PROXY:Int = 97
+Rem
+bbdoc: Error code - A client-side certificate is required.
+End Rem
+Const CURLE_SSL_CLIENTCERT:Int = 98
+Rem
+bbdoc: Error code - poll/select returned fatal error
+End Rem
+Const CURLE_UNRECOVERABLE_POLL:Int = 99
+Rem
+bbdoc: Error code - The maximum file size allowed for transfer was exceeded.
+End Rem
+Const CURLE_TOO_LARGE:Int = 100
+Rem
+bbdoc: Error code - Encrypted Client Hello (ECH) was configured but the handshake failed.
+End Rem
+Const CURLE_ECH_REQUIRED:Int = 101
 
 Rem
 bbdoc: The library will ignore the file and use only the information in the URL.
