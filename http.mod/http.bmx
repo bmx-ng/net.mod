@@ -19,7 +19,19 @@
 ' 
 SuperStrict
 
+Rem
+bbdoc: HTTP Client
+about: Provides classes and methods for making HTTP requests and handling responses.
+End Rem
 Module Net.Http
+
+ModuleInfo "Version: 1.00"
+ModuleInfo "Author: Bruce A Henderson"
+ModuleInfo "License: zlib/png"
+ModuleInfo "Copyright: 2025 Bruce A Henderson"
+
+ModuleInfo "History: 1.00"
+ModuleInfo "History: Initial Release"
 
 Import BRL.Stream
 Import BRL.Math
@@ -29,7 +41,13 @@ Import "http_url.bmx"
 Import "http_ca.bmx"
 Import "http_cookie.bmx"
 
+Rem
+bbdoc: Listener interface for asynchronous HTTP request completion.
+End Rem
 Interface ICompleteListener
+	Rem
+	bbdoc: Called when the HTTP request is complete.
+	End Rem
 	Method OnComplete(result:THttpResult)
 End Interface
 
@@ -40,10 +58,16 @@ Type THttpResult
 	Field request:THttpRequest
 	Field response:THttpResponse
 
+	Rem
+	bbdoc: Returns whether the HTTP request was successful.
+	End Rem
 	Method IsSucceeded:Int()
 		Return response <> Null And response.IsSuccess()
 	End Method
 
+	Rem
+	bbdoc: Returns whether the HTTP request failed.
+	End Rem
 	Method IsFailed:Int()
 		Return Not IsSucceeded()
 	End Method
@@ -63,6 +87,9 @@ Type THttpResponse
 	Field effectiveUrl:String
 	Field bytesReceived:Long
 
+	Rem
+	bbdoc: Returns whether the HTTP request was successful.
+	End Rem
 	Method IsSuccess:Int()
 		Return status >= 200 And status < 300 And curlCode = 0
 	End Method
@@ -88,6 +115,9 @@ Type THttpResponse
 		Return body
 	End Method
 
+	Rem
+	bbdoc: Returns the error message for the HTTP request.
+	End Rem
 	Method ErrorMessage:String()
 		If curlCode <> 0 Then Return "curl(" + curlCode + ") " + curlErr
 		If status > 0 Then Return "HTTP " + status + " " + reason
@@ -95,6 +125,10 @@ Type THttpResponse
 	End Method
 End Type
 
+Rem
+bbdoc: HTTP Request.
+about: Represents an HTTP request, including method, URL, headers, and body content.
+End Rem
 Type THttpRequest
 	Field _client:THttpClient
 
@@ -116,6 +150,8 @@ Type THttpRequest
 	Field _path:String
 	Field _query:String
 	Field _params:THttpFields = New THttpFields
+
+	Field _userAgent:String
 
 	Field _followRedirects:Int = True
 	Field _user:String
@@ -349,6 +385,14 @@ Type THttpRequest
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the User-Agent header for the HTTP request.
+	End Rem
+	Method UserAgent:THttpRequest(userAgent:String)
+		_userAgent = userAgent
+		Return Self
+	End Method
+
 	Method GetPath:String()
 		Return _path
 	End Method
@@ -381,6 +425,9 @@ Type THttpRequest
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Returns the URL for the HTTP request.
+	End Rem
 	Method GetUrl:TUrl()
 		If Not _url Then
 			_url = BuildUrl(True)
@@ -406,6 +453,9 @@ Type THttpRequest
 	End Method
 
 	' ---- send ----
+	Rem
+	bbdoc: Sends the HTTP request and returns the response.
+	End Rem
 	Method Send:THttpResponse()
 		If Not _sink Then
 			_sink = New TMemorySink
@@ -417,6 +467,10 @@ Type THttpRequest
 		Return _response
 	End Method
 
+	Rem
+	bbdoc: Sends the HTTP request asynchronously.
+	about: The provided listener will be called upon completion of the request.
+	End Rem
 	Method SendAsync(listener:ICompleteListener)
 		 If Not _sink Then
 			_sink = New TMemorySink
@@ -544,8 +598,14 @@ Type THttpClient
 	Field _totalTimeoutMs:Int = 0
 	Field _idleTimeoutMs:Int = 60000
 
+	Field _userAgent:String
+
 	Field _retryDefault:TRetryPolicy = New TRetryPolicy
 
+	Rem
+	bbdoc: Creates a new HTTP client instance.
+	about: This function initializes a new instance of the HTTP client.
+	End Rem
 	Function Create:THttpClient()
 		Local client:THttpClient = New THttpClient
 		client._multi = TCurlMulti.Create()
@@ -625,6 +685,9 @@ Type THttpClient
 		Return _followRedirects
 	End Method
 
+	Rem
+	bbdoc: Sets the retry policy for the HTTP client.
+	End Rem
 	Method SetRetryPolicy(policy:TRetryPolicy)
 		_retryDefault = policy
 	End Method
@@ -635,6 +698,7 @@ Type THttpClient
 		request.IdleTimeout(_idleTimeoutMs)
 		request.ConnectTimeout(_connectTimeoutMs)
 		request.TotalTimeout(_totalTimeoutMs)
+		request.UserAgent(_userAgent)
 	End Method
 
 	Rem
@@ -690,6 +754,14 @@ Type THttpClient
 	End Rem
 	Method SetIdleTimeout(timeoutMs:Int)
 		_idleTimeoutMs = timeoutMs
+	End Method
+
+	Rem
+	bbdoc: Sets the User-Agent header for the HTTP client.
+	about: Applies to all subsequent requests unless overridden at the request level.
+	End Rem
+	Method SetUserAgent(userAgent:String)
+		_userAgent = userAgent
 	End Method
 
 Private
@@ -949,6 +1021,11 @@ Private
 
 		If request._bearerToken Then
 			easy.setOptString(CURLOPT_XOAUTH2_BEARER, request._bearerToken)
+		End If
+
+		' user agent
+		If request._userAgent Then
+			easy.setOptString(CURLOPT_USERAGENT, request._userAgent)
 		End If
 
 		easy.setOptInt(CURLOPT_HTTPAUTH, request._authMethod.Ordinal())
