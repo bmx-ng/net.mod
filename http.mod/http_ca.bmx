@@ -20,7 +20,8 @@
 SuperStrict
 
 Import BRL.FileSystem
-Import brl.collections
+Import Collections.HashMap
+Import Collections.ArrayList
 Import Brl.stringbuilder
 
 Import "../mbedtls.mod/mbedtls/include/*.h"
@@ -256,7 +257,7 @@ End Type
 Type TMacOSCAStoreBundler
 
 	Field store:TMacOSCAStore
-	Field bundles:TTreeMap<String, String> = New TTreeMap<String, String>
+	Field bundles:THashMap<String, String> = New THashMap<String, String>
 
 	Method New(store:TMacOSCAStore)
 		self.store = store
@@ -331,7 +332,7 @@ End Type
 
 Type TWindowsCAStoreBundler
 	Field store:TWindowsCAStore
-	Field bundles:TTreeMap<String, String> = New TTreeMap<String, String>
+	Field bundles:THashMap<String, String> = New THashMap<String, String>
 
 	Method New(store:TWindowsCAStore)
 		Self.store = store
