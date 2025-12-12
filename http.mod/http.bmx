@@ -35,6 +35,9 @@ ModuleInfo "History: Initial Release"
 
 Import BRL.Stream
 Import BRL.Math
+Import Collections.HashSet
+Import Collections.LinkedList
+Import BRL.Threads
 
 Import "http_util.bmx"
 Import "http_url.bmx"
@@ -210,6 +213,21 @@ Type THttpRequest
 	End Rem
 	Method Header:THttpRequest(key:EHttpHeader, value:String)
 		_headers.Add(key,value)
+		Return Self
+	End Method
+
+	Rem
+	bbdoc: Adds multiple headers to the HTTP request.
+	End Rem
+	Method Headers:THttpRequest(fields:THttpFields)
+		If fields Then
+			'_headers.Add(fields)
+		End If
+		Return Self
+	End Method
+
+	Method WithMethod:THttpRequest(_method:EHttpMethod)
+		Self._method = _method
 		Return Self
 	End Method
 
@@ -1744,9 +1762,9 @@ Type TRetryPolicy
 	Field allowPostReplay:Int = False
 
 	' which methods/statuses/curlcodes are retryable
-	Field allowMethods:TSet<EHttpMethod> = New TSet<EHttpMethod>.FromArray([EHttpMethod.Get, EHttpMethod.Head, EHttpMethod.Put, EHttpMethod.Delete, EHttpMethod.Options, EHttpMethod.Trace])
-	Field retryStatuses:TSet<Int> = New TSet<Int>.FromArray([429,502,503,504])
-	Field retryCurlCodes:TSet<Int> = New TSet<Int>.FromArray([ ..
+	Field allowMethods:THashSet<EHttpMethod> = New THashSet<EHttpMethod>([EHttpMethod.Get, EHttpMethod.Head, EHttpMethod.Put, EHttpMethod.Delete, EHttpMethod.Options, EHttpMethod.Trace])
+	Field retryStatuses:THashSet<Int> = New THashSet<Int>([429,502,503,504])
+	Field retryCurlCodes:THashSet<Int> = New THashSet<Int>([ ..
 		CURLE_OPERATION_TIMEDOUT, CURLE_COULDNT_CONNECT,
 		CURLE_RECV_ERROR, CURLE_SEND_ERROR, CURLE_GOT_NOTHING,
 		CURLE_PARTIAL_FILE ])

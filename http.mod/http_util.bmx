@@ -20,7 +20,8 @@
 SuperStrict
 
 Import Net.libcurl
-Import brl.collections
+Import Collections.ArrayList
+Import Collections.HashMap
 
 Type THttpField
 Private
@@ -200,6 +201,7 @@ Enum EHttpMethod
 	Patch
 	Trace
 	Connect
+	Query
 End Enum
 
 Enum EHttpHeader
@@ -315,8 +317,8 @@ End Enum
 
 Type THttpHelper
 
-	Global _nameToHeaderCache:TTreeMap<String,EHttpHeader> = New TTreeMap<String,EHttpHeader>
-	Global _headerToNameCache:TTreeMap<EHttpHeader,String> = New TTreeMap<EHttpHeader,String>
+	Global _nameToHeaderCache:THashMap<String,EHttpHeader> = New THashMap<String,EHttpHeader>
+	Global _headerToNameCache:THashMap<EHttpHeader,String> = New THashMap<EHttpHeader,String>
 
 	Private
 	Function Init()
@@ -458,6 +460,18 @@ Type THttpHelper
 	Function UrlEncodeComponent:String(s:String)
 		Return bmx_curl_easy_escape(s)
 	End Function
+
+End Type
+
+Type THttpClientException Extends TRuntimeException
+
+	Field status:Int
+
+	Method New(status:Int, message:String)
+		Super.New(message)
+		Self.status = status
+	End Method
+
 End Type
 
 

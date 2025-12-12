@@ -19,7 +19,7 @@
 ' 
 SuperStrict
 
-Import BRL.Collections
+Import Collections.HashMap
 Import "http_url.bmx"
 
 Interface ICookie
@@ -47,7 +47,7 @@ Type THttpCookie Implements ICookie
 	Field _value:String
 	Field _version:Int
 
-	Field _attributes:TTreeMap<String, String> = New TTreeMap<String, String>(New TCaseInsensitiveStringComparator)
+	Field _attributes:THashMap<String, String> = New THashMap<String, String>(New TCaseInsensitiveStringComparator)
 
 	Function Build:THttpCookieBuilder(name:String, value:String, version:Int = 0)
 		Return New THttpCookieBuilder(name, value, version)
@@ -330,7 +330,7 @@ Type THttpCookieBuilder
 	Field _name:String
 	Field _value:String
 	Field _version:Int
-	Field _attributes:TTreeMap<String, String> = New TTreeMap<String, String>
+	Field _attributes:THashMap<String, String> = New THashMap<String, String>(New TCaseInsensitiveStringComparator)
 
 	Method New(name:String, value:String, version:Int)
 		Self._name = name
@@ -343,8 +343,8 @@ Type THttpCookieBuilder
 		cookie._name = _name
 		cookie._value = _value
 		cookie._version = _version
-		For local node:TMapNode<String,String> = Eachin _attributes
-			cookie._attributes.Put( node.key, node.value )
+		For local node:IMapNode<String,String> = Eachin _attributes
+			cookie._attributes.Put( node.GetKey(), node.GetValue() )
 		Next
 		Return cookie
 	End Method
@@ -465,7 +465,7 @@ End Type
 
 Type THttpCookieStore
 
-	Field cookies:TTreeMap<String, TArrayList<TCachedCookie>> = New TTreeMap<String, TArrayList<TCachedCookie>>
+	Field cookies:THashMap<String, TArrayList<TCachedCookie>> = New THashMap<String, TArrayList<TCachedCookie>>
 
 	Method Add:Int(url:TUrl, cookie:THttpCookie)
 
@@ -506,8 +506,8 @@ Type THttpCookieStore
 	Method All:TArrayList<THttpCookie>()
 		Local allCookies:TArrayList<THttpCookie> = New TArrayList<THttpCookie>
 
-		For Local entry:TMapNode<String, TArrayList<TCachedCookie>> = Eachin cookies
-			For Local cachedCookie:TCachedCookie = Eachin entry.value
+		For Local entry:IMapNode<String, TArrayList<TCachedCookie>> = Eachin cookies
+			For Local cachedCookie:TCachedCookie = Eachin entry.GetValue()
 				If Not cachedCookie.IsExpired() Then
 					allCookies.Add( cachedCookie._cookie )
 				End If
@@ -532,7 +532,7 @@ Type THttpCookieStore
 		Local isSecure:Int = url.IsSecureScheme()
 
 		Local result:TArrayList<THttpCookie> = New TArrayList<THttpCookie>
-		Local expired:TTreeMap<String, TArrayList<TCachedCookie>> = New TTreeMap<String, TArrayList<TCachedCookie>>
+		Local expired:THashMap<String, TArrayList<TCachedCookie>> = New THashMap<String, TArrayList<TCachedCookie>>
 		Local domain:String = urlDomain.ToLower()
 
 		While domain
@@ -579,12 +579,12 @@ Type THttpCookieStore
 
 		If Not expired.IsEmpty() Then
 
-			For Local entry:TMapNode<String, TArrayList<TCachedCookie>> = Eachin expired
+			For Local entry:IMapNode<String, TArrayList<TCachedCookie>> = Eachin expired
 				
-				Local domain:String = entry.key
+				Local domain:String = entry.GetKey()
 				Local cached:TArrayList<TCachedCookie>
 				If cookies.TryGetValue(domain, cached) Then
-					For Local cookie:TCachedCookie = Eachin entry.value
+					For Local cookie:TCachedCookie = Eachin entry.GetValue()
 						cached.Remove(cookie)
 					Next
 					If cached.IsEmpty() Then
@@ -1045,27 +1045,21 @@ Enum ECookieParseState
 	AttributeValue
 EndEnum
 
-Type TCaseInsensitiveStringComparator Implements IComparator<String>
+Type TCaseInsensitiveStringComparator Implements IEqualityComparator<String>
 
-	Method Compare:Int(a:String, b:String)
-		If Not a Or Not b Then
-			If a And Not b Then
-				Return 1
-			ElseIf Not a And b Then
-				Return -1
-			Else
-				Return 0
-			End If
-		End If
+	Method HashCode:UInt(value:String)
+		Return value.HashCode(False)
+	End Method
 
-		Return a.ToLower().Compare( b.ToLower() )
+	Method Equals:Int(a:String, b:String)
+		Return a.Equals(b, False)
 	End Method
 
 End Type
 
 Type TCookieHelper
-	Global _nameToCookieAttributeCache:TTreeMap<String,ECookieAttribute> = New TTreeMap<String,ECookieAttribute>
-	Global _cookieAttributeToNameCache:TTreeMap<ECookieAttribute,String> = New TTreeMap<ECookieAttribute,String>
+	Global _nameToCookieAttributeCache:THashMap<String,ECookieAttribute> = New THashMap<String,ECookieAttribute>
+	Global _cookieAttributeToNameCache:THashMap<ECookieAttribute,String> = New THashMap<ECookieAttribute,String>
 	Global _months:String[] = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ]
 
 	Private

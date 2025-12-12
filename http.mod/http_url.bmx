@@ -311,6 +311,7 @@ Extern
 
 End Extern
 
+Public
 
 Enum EUrlCode
 	Ok = 0
@@ -347,3 +348,26 @@ Enum EUrlPart
 	ZoneId
 End Enum
 
+Function QueryToHttpFields:THttpFields(url:TUrl)
+	Return QueryToHttpFields( url.GetQuery() )
+End Function
+
+Function QueryToHttpFields:THttpFields(query:String)
+	Local httpFields:THttpFields = New THttpFields
+	If query = Null Or query = "" Then
+		Return httpFields
+	End If
+
+	Local pairs:String[] = query.Split("&")
+	For Local pair:String = EachIn pairs
+		Local idx:Int = pair.Find("=")
+		If idx = -1
+			httpFields.Add( THttpHelper.UrlEncodeComponent(pair), "" )
+		Else
+			Local key:String = pair[..idx]
+			Local val:String = pair[idx + 1..]
+			httpFields.Add( THttpHelper.UrlEncodeComponent(key), THttpHelper.UrlEncodeComponent(val) )
+		End If
+	Next
+	Return httpFields
+End Function
