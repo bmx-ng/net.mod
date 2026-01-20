@@ -22,24 +22,92 @@ SuperStrict
 Import Collections.HashMap
 Import "http_url.bmx"
 
+Rem
+bbdoc: HTTP Cookie interface
+End Rem
 Interface ICookie
+	Rem
+	bbdoc: Gets the cookie name.
+	End Rem
 	Method GetName:String()
+	Rem
+	bbdoc: Gets the cookie value.
+	End Rem
 	Method GetValue:String()
+	Rem
+	bbdoc: Gets the cookie version.
+	End Rem
 	Method GetVersion:Int()
+	Rem
+	bbdoc: Gets the 'Comment' attribute value.
+	End Rem
 	Method GetComment:String()
+	Rem
+	bbdoc: Gets the 'Domain' attribute value.
+	End Rem
 	Method GetDomain:String()
+	Rem
+	bbdoc: Gets the 'Path' attribute value.
+	End Rem
 	Method GetPath:String()
+	Rem
+	bbdoc: Gets the 'Max-Age' attribute value.
+	End Rem
 	Method GetMaxAge:Long()
+	Rem
+	bbdoc: Gets the 'SameSite' attribute value.
+	End Rem
 	Method GetSameSite:String()
+	Rem
+	bbdoc: Gets the 'Expires' attribute value.
+	End Rem
 	Method GetExpires:Long()
+	Rem
+	bbdoc: Returns whether the 'Partitioned' attribute is set.
+	End Rem
 	Method IsPartitioned:Int()
+	Rem
+	bbdoc: Returns whether the 'HttpOnly' attribute is set.
+	End Rem
 	Method IsHttpOnly:Int()
+	Rem
+	bbdoc: Returns whether the 'Secure' attribute is set.
+	End Rem
 	Method IsSecure:Int()
-	Method isExpired:Int()
+	Rem
+	bbdoc: Returns whether the cookie has expired.
+	End Rem
+	Method IsExpired:Int()
 End Interface
 
 Rem
-bbdco: HTTP Cookie representation
+bbdoc: An HTTP Cookie representation.
+about: 
+HTTP cookies are small pieces of data that a server asks a client (such as a web browser
+or HTTP client) to store and send back with subsequent requests. They are most commonly
+used to maintain state across multiple HTTP requests, since HTTP itself is a stateless
+protocol.
+
+Cookies are typically used for:
+
+* **Session management** (for example, login sessions or authentication tokens)
+* **User preferences** (language, theme, or other settings)
+* **Tracking and analytics** (identifying returning clients)
+
+When a server includes a `Set-Cookie` header in an HTTP response, the client may store the
+cookie according to its attributes (such as domain, path, expiration time, and security
+flags). On later requests, the client automatically sends matching cookies back to the
+server using the `Cookie` request header.
+
+An HTTP cookie may define:
+
+* A **name** and **value**
+* A **domain** and **path** that control when it is sent
+* An **expiration** or **max-age**, determining its lifetime
+* Security attributes such as **Secure** (HTTPS only) and **HttpOnly**
+
+#THttpCookie represents a single HTTP cookie and provides access to its properties, allowing
+applications to inspect, store, and manage cookies as part of HTTP client communication.
 End Rem
 Type THttpCookie Implements ICookie
 
@@ -49,6 +117,9 @@ Type THttpCookie Implements ICookie
 
 	Field _attributes:THashMap<String, String> = New THashMap<String, String>(New TCaseInsensitiveStringComparator)
 
+	Rem
+	bbdoc: Creates a new HTTP cookie builder.
+	End Rem
 	Function Build:THttpCookieBuilder(name:String, value:String, version:Int = 0)
 		Return New THttpCookieBuilder(name, value, version)
 	End Function
@@ -162,7 +233,7 @@ Type THttpCookie Implements ICookie
 	End Method
 
 	Rem
-	bbdoc: Returns whether the cookie is expired.
+	bbdoc: Returns whether the cookie has expired.
 	End Rem
 	Method IsExpired:Int() Override
 
@@ -179,6 +250,9 @@ Type THttpCookie Implements ICookie
 		Return nowSecs > ULong(expires)
 	End Method
 
+	Rem
+	bbdoc: Gets the attribute value by enum.
+	End Rem
 	Method GetAttribute:String(attr:ECookieAttribute)
 		Local found:String
 		Local res:Int = _attributes.TryGetValue(attr.ToString(), found)
@@ -187,6 +261,9 @@ Type THttpCookie Implements ICookie
 		End If
 	End Method
 
+	Rem
+	bbdoc: Gets the attribute value by string key.
+	End Rem
 	Method GetAttribute:String(attr:String)
 		Local found:String
 		Local res:Int = _attributes.TryGetValue(attr, found)
@@ -326,6 +403,10 @@ Type TCachedCookie Implements ICookie
 
 End Type
 
+Rem
+bbdoc: HTTP Cookie builder.
+about: Provides a builder pattern for creating HTTP cookies with various attributes.
+End Rem
 Type THttpCookieBuilder
 	Field _name:String
 	Field _value:String
@@ -338,6 +419,9 @@ Type THttpCookieBuilder
 		Self._version = version
 	End Method
 
+	Rem
+	bbdoc: Builds and returns the HTTP cookie.
+	End Rem
 	Method Build:THttpCookie()
 		Local cookie:THttpCookie = New THttpCookie
 		cookie._name = _name
@@ -349,6 +433,9 @@ Type THttpCookieBuilder
 		Return cookie
 	End Method
 
+	Rem
+	bbdoc: Sets a cookie attribute by name and value.
+	End Rem
 	Method Attribute:THttpCookieBuilder(name:String, value:String)
 		If Not name Then
 			Return Self
@@ -394,6 +481,10 @@ Type THttpCookieBuilder
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the 'Expires' attribute.
+	about: The expires parameter is a Unix timestamp (seconds since epoch). If expires is less than or equal to zero, the 'Expires' attribute is removed.
+	End Rem
 	Method Expires:THttpCookieBuilder(expires:Long)
 		If expires > 0 Then
 			Local expiresStr:String = TCookieHelper.FormatExpires(expires)
@@ -417,6 +508,10 @@ Type THttpCookieBuilder
 		IllegalArgumentError("Invalid value for " + name)
 	End Method
 
+	Rem
+	bbdoc: Sets the 'HttpOnly' attribute.
+	about: If httpOnly is #True, the 'HttpOnly' attribute is set; otherwise, it is removed.
+	End Rem
 	Method HttpOnly:THttpCookieBuilder(httpOnly:Int)
 		If httpOnly Then
 			_attributes.Put( ECookieAttribute.HttpOnly.ToString(), "true" )
@@ -426,6 +521,10 @@ Type THttpCookieBuilder
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the 'Max-Age' attribute.
+	about: If maxAge is non-negative, the 'Max-Age' attribute is set to the specified value; otherwise, it is removed.
+	End Rem
 	Method MaxAge:THttpCookieBuilder(maxAge:Long)
 		If maxAge >= 0 Then
 			_attributes.Put( ECookieAttribute.MaxAge.ToString(), String(maxAge) )
@@ -435,6 +534,10 @@ Type THttpCookieBuilder
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the 'Partitioned' attribute.
+	about: If partitioned is #True, the 'Partitioned' attribute is set; otherwise, it is removed.
+	End Rem
 	Method Partitioned:THttpCookieBuilder(partitioned:Int)
 		If partitioned Then
 			_attributes.Put( ECookieAttribute.Partitioned.ToString(), "true" )
@@ -444,6 +547,10 @@ Type THttpCookieBuilder
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the 'Secure' attribute.
+	about: If secure is #True, the 'Secure' attribute is set; otherwise, it is removed.
+	End Rem
 	Method Secure:THttpCookieBuilder(secure:Int)
 		If secure Then
 			_attributes.Put( ECookieAttribute.Secure.ToString(), "true" )
@@ -453,6 +560,10 @@ Type THttpCookieBuilder
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the 'SameSite' attribute.
+	about: If sameSite is not empty, the 'SameSite' attribute is set to the specified value; otherwise, it is removed.
+	End Rem
 	Method SameSite:THttpCookieBuilder(sameSite:String)
 		If sameSite Then
 			_attributes.Put( ECookieAttribute.SameSite.ToString(), sameSite )
@@ -787,6 +898,23 @@ Type THttpCookieStore
 
 End Type
 
+Rem
+bbdoc: Cookie attributes
+about: Enumeration of standard cookie attributes.
+
+| Attribute | Description |
+|-----------|-------------|
+| Comment | The Comment attribute is an optional attribute that provides a description of the cookie's purpose. It is primarily intended for human users and is not used by browsers for cookie management. |
+| Domain | The Domain attribute specifies the domain for which the cookie is valid. If not specified, it defaults to the host of the current document URL, not including subdomains. If specified, it must start with a dot (e.g., .example.com) to allow subdomains to access the cookie. |
+| Expires | The Expires attribute defines the date and time when the cookie will expire. After this date, the cookie will no longer be sent by the browser. The date should be in GMT format. |
+| HttpOnly | The HttpOnly attribute is a security feature that prevents client-side scripts from accessing the cookie. This helps mitigate the risk of cross-site scripting (XSS) attacks. |
+| Max-Age | The Max-Age attribute specifies the maximum age of the cookie in seconds. After this time, the cookie will expire. If both Expires and Max-Age are set, Max-Age takes precedence. |
+| Path | The Path attribute indicates the URL path that must exist in the requested URL for the browser to send the Cookie header. If not specified, it defaults to the path of the current document URL. |
+| SameSite | The SameSite attribute is used to control whether cookies are sent with cross-site requests. It can have three values: Strict, Lax, or None. This attribute helps prevent cross-site request forgery (CSRF) attacks. |
+| Secure | The Secure attribute indicates that the cookie should only be sent over secure (HTTPS) connections. This helps protect the cookie from being intercepted during transmission. |
+| Partitioned | The Partitioned attribute is used to indicate that the cookie is partitioned by the top-level site, meaning it is isolated to the context of the top-level site and cannot be accessed by third-party contexts. This enhances privacy by preventing cross-site tracking. |
+
+End Rem
 Enum ECookieAttribute
 	Comment
 	Domain

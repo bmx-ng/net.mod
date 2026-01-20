@@ -82,24 +82,48 @@ Type TCAStoreProvider
 	
 End Type
 
+Rem
+bbdoc: Base class for Certificate Authority (CA) stores.
+about: Represents a source of trusted CA certificates for verifying SSL/TLS connections.
+End Rem
 Type TCAStore
 
+	Rem
+	bbdoc: Checks if the CA store is file-based.
+	about: Returns #True if the CA store is based on a file, #False otherwise.
+	End Rem
 	Method IsAFile:Int()
 		Return False
 	End Method
 
+	Rem
+	bbdoc: Checks if the CA store is blob-based.
+	about: Returns #True if the CA store is based on a blob of data, #False otherwise.
+	End Rem
 	Method IsABlob:Int()
 		Return False
 	End Method
 
+	Rem
+	bbdoc: Retrieves the CA certificates as a blob of bytes.
+	about: Returns the CA certificates as a byte array, or #Null if not applicable.
+	End Rem
 	Method CertsAsBlob:Byte[]()
 		Return Null
 	End Method
 
+	Rem
+	bbdoc: Retrieves the CA certificates as a file path.
+	about: Returns the file path to the CA certificates, or an empty string if not applicable.
+	End Rem
 	Method CertsAsPath:String()
 		Return ""
 	End Method
 
+	Rem
+	bbdoc: Verifies the validity of the CA bundle.
+	about: Returns #True if the CA bundle is valid and usable, #False otherwise.
+	End Rem
 	Method VerifyBundle:Int()
 
 	End Method
