@@ -179,7 +179,7 @@ Type THttpRequest
 		Return Self
 	End Method
 
-	 Method Create:THttpRequest(client:THttpClient, _method:EHttpMethod, url:String)
+	Method Create:THttpRequest(client:THttpClient, _method:EHttpMethod, url:String)
 		_client = client
 		Self._method = _method
 		Self._url = New TUrl(url)
@@ -226,6 +226,9 @@ Type THttpRequest
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets the HTTP method for the request.
+	End Rem
 	Method WithMethod:THttpRequest(_method:EHttpMethod)
 		Self._method = _method
 		Return Self
@@ -390,6 +393,10 @@ Type THttpRequest
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Sets whether the request should follow HTTP redirects automatically.
+	about: Defaults to #True.
+	End Rem
 	Method FollowRedirects:THttpRequest(follow:Int)
 		_followRedirects = follow
 		Return Self
@@ -411,10 +418,16 @@ Type THttpRequest
 		Return Self
 	End Method
 
+	Rem
+	bbdoc: Returns the path component of the URL for the HTTP request.
+	End Rem
 	Method GetPath:String()
 		Return _path
 	End Method
 
+	Rem
+	bbdoc: Returns the query component of the URL for the HTTP request.
+	End Rem
 	Method GetQuery:String()
 		Return _query
 	End Method
@@ -498,10 +511,16 @@ Type THttpRequest
 	End Method
 
 	' convenience
+	Rem
+	bbdoc: Returns the HTTP response associated with this request.
+	End Rem
 	Method Response:THttpResponse()
 		Return _response
 	End Method
 
+	Rem
+	bbdoc: Returns whether the HTTP request was successful.
+	End Rem
 	Method IsSucceeded:Int()
 		If _response Then
 			Return _response.IsSuccess()
@@ -509,6 +528,9 @@ Type THttpRequest
 		Return False
 	End Method
 
+	Rem
+	bbdoc: Returns whether the HTTP request failed.
+	End Rem
 	Method IsFailed:Int()
 		Return Not IsSucceeded()
 	End Method
@@ -1535,35 +1557,63 @@ Type TConcurrentQueue<T>
 	End Method
 End Type
 
+Rem
+bbdoc: Abstract representation of HTTP request content.
+about: This type defines the interface for various content types that can be sent in HTTP requests.
+End Rem
 Type TContent Abstract
 
 	Field _contentType:String = "application/octet-stream"
 
+	Rem
+	bbdoc: Returns the MIME content type of the request body.
+	End Rem
 	Method GetContentType:String()
 		Return _contentType
 	End Method
 
+	Rem
+	bbdoc: Returns the length of the content in bytes, or -1 if unknown.
+	End Rem
 	Method GetLength:Long()
 		Return -1
 	End Method
 
-	' returns number of bytes read, or 0 on EOF
+	Rem
+	bbdoc: Reads up to 'size' bytes into the provided buffer.
+	about: Returns the number of bytes actually read, or 0 if the end of the content is reached.
+	End Rem
 	Method Read:Size_T(buffer:Byte Ptr, size:Size_T) Abstract
 
+	Rem
+	bbdoc: Indicates whether the content can be replayed for retries.
+	End Rem
 	Method CanReplay:Int()
 		Return False
 	End Method
 
+	Rem
+	bbdoc: Rewinds the content to the beginning for replay.
+	about: Returns #True if successful, #False otherwise.
+	End Rem
 	Method Rewind:Int()
 		Return False
 	End Method
 
+	Rem
+	bbdoc: Clones the content for replay purposes.
+	about: Returns a new instance of #TContent that is a copy of the original, or #Null if cloning is not supported.
+	End Rem
 	Method Clone:TContent()
 		Return Null
 	End Method
 
 End Type
 
+Rem
+bbdoc: String-based HTTP request content.
+about: Represents HTTP request content backed by a string, with UTF-8 encoding.
+End Rem
 Type TStringContent Extends TContent
 	Field _data:Byte Ptr
 	Field _size:Size_T
@@ -1619,6 +1669,11 @@ Type TStringContent Extends TContent
 	End Method
 End Type
 
+Rem
+bbdoc: Stream-based HTTP request content.
+about: Represents HTTP request content backed by a stream.
+Does not take ownership of the stream.
+End Rem
 Type TStreamContent Extends TContent
 	Field _stream:TStream
 	Field _length:Long
@@ -1654,6 +1709,10 @@ Type TStreamContent Extends TContent
 
 End Type
 
+Rem
+bbdoc: Byte pointer-based HTTP request content.
+about: Represents HTTP request content backed by a byte pointer and size.
+End Rem
 Type TBytePtrContent Extends TContent
 	Field _data:Byte Ptr
 	Field _size:Size_T
@@ -1702,6 +1761,10 @@ Type TBytePtrContent Extends TContent
 
 End Type
 
+Rem
+bbdoc: Byte array-based HTTP request content.
+about: Represents HTTP request content backed by a byte array.
+End Rem
 Type TByteArrayContent Extends TBytePtrContent
 	Field _dataArray:Byte[]
 
@@ -1716,6 +1779,10 @@ Type TByteArrayContent Extends TBytePtrContent
 
 End Type
 
+Rem
+bbdoc: Bank-based HTTP request content.
+about: Represents HTTP request content backed by a #TBank.
+End Rem
 Type TBankContent Extends TBytePtrContent
 	Field _bank:TBank
 
