@@ -1,5 +1,5 @@
 ' 
-' Copyright 2018-2025 Bruce A Henderson
+' Copyright 2018-2026 Bruce A Henderson
 ' 
 ' Licensed under the Apache License, Version 2.0 (the "License");
 ' you may not use this file except in compliance with the License.
@@ -17,20 +17,10 @@ SuperStrict
 
 Import "mbedtls/include/*.h"
 
-Import "mbedtls/library/asn1write.c"
 Import "mbedtls/library/base64.c"
-Import "mbedtls/library/ctr_drbg.c"
 Import "mbedtls/library/debug.c"
 Import "mbedtls/library/dhm.c"
-Import "mbedtls/library/ecdh.c"
-Import "mbedtls/library/ecdsa.c"
-Import "mbedtls/library/ecp.c"
-Import "mbedtls/library/ecp_curves.c"
-Import "mbedtls/library/ecp_curves_new.c"
-Import "mbedtls/library/entropy.c"
-Import "mbedtls/library/entropy_poll.c"
 Import "mbedtls/library/error.c"
-Import "mbedtls/library/hmac_drbg.c"
 Import "mbedtls/library/net_sockets.c"
 Import "mbedtls/library/pem.c"
 Import "mbedtls/library/pk.c"
@@ -39,8 +29,6 @@ Import "mbedtls/library/pk_wrap.c"
 Import "mbedtls/library/pkcs12.c"
 Import "mbedtls/library/pkparse.c"
 Import "mbedtls/library/pkwrite.c"
-Import "mbedtls/library/rsa.c"
-Import "mbedtls/library/rsa_alt_helpers.c"
 Import "mbedtls/library/ssl_ciphersuites.c"
 Import "mbedtls/library/ssl_client.c"
 Import "mbedtls/library/ssl_debug_helpers_generated.c"

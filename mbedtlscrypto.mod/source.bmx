@@ -1,5 +1,5 @@
 ' 
-' Copyright 2018-2025 Bruce A Henderson
+' Copyright 2018-2026 Bruce A Henderson
 ' 
 ' Licensed under the Apache License, Version 2.0 (the "License");
 ' you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
 ' 
 SuperStrict
 
+?win32
+Import "-lbcrypt"
+?
+
 Import "../mbedtls.mod/mbedtls/include/*.h"
 
 Import "../mbedtls.mod/mbedtls/library/aes.c"
@@ -22,6 +26,7 @@ Import "../mbedtls.mod/mbedtls/library/aesni.c"
 Import "../mbedtls.mod/mbedtls/library/aesce.c"
 Import "../mbedtls.mod/mbedtls/library/aria.c"
 Import "../mbedtls.mod/mbedtls/library/asn1parse.c"
+Import "../mbedtls.mod/mbedtls/library/asn1write.c"
 Import "../mbedtls.mod/mbedtls/library/bignum.c"
 Import "../mbedtls.mod/mbedtls/library/bignum_core.c"
 Import "../mbedtls.mod/mbedtls/library/bignum_mod.c"
@@ -35,9 +40,18 @@ Import "../mbedtls.mod/mbedtls/library/chachapoly.c"
 Import "../mbedtls.mod/mbedtls/library/cipher.c"
 Import "../mbedtls.mod/mbedtls/library/cipher_wrap.c"
 Import "../mbedtls.mod/mbedtls/library/constant_time.c"
+Import "../mbedtls.mod/mbedtls/library/ctr_drbg.c"
 Import "../mbedtls.mod/mbedtls/library/des.c"
 Import "../mbedtls.mod/mbedtls/library/ecjpake.c"
+Import "../mbedtls.mod/mbedtls/library/ecdh.c"
+Import "../mbedtls.mod/mbedtls/library/ecdsa.c"
+Import "../mbedtls.mod/mbedtls/library/ecp.c"
+Import "../mbedtls.mod/mbedtls/library/ecp_curves.c"
+Import "../mbedtls.mod/mbedtls/library/ecp_curves_new.c"
+Import "../mbedtls.mod/mbedtls/library/entropy.c"
+Import "../mbedtls.mod/mbedtls/library/entropy_poll.c"
 Import "../mbedtls.mod/mbedtls/library/gcm.c"
+Import "../mbedtls.mod/mbedtls/library/hmac_drbg.c"
 Import "../mbedtls.mod/mbedtls/library/lmots.c"
 Import "../mbedtls.mod/mbedtls/library/lms.c"
 Import "../mbedtls.mod/mbedtls/library/md.c"
@@ -66,6 +80,8 @@ Import "../mbedtls.mod/mbedtls/library/psa_crypto_storage.c"
 Import "../mbedtls.mod/mbedtls/library/psa_its_file.c"
 Import "../mbedtls.mod/mbedtls/library/psa_util.c"
 Import "../mbedtls.mod/mbedtls/library/ripemd160.c"
+Import "../mbedtls.mod/mbedtls/library/rsa_alt_helpers.c"
+Import "../mbedtls.mod/mbedtls/library/rsa.c"
 Import "../mbedtls.mod/mbedtls/library/sha1.c"
 Import "../mbedtls.mod/mbedtls/library/sha256.c"
 Import "../mbedtls.mod/mbedtls/library/sha3.c"
