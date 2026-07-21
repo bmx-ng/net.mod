@@ -804,7 +804,7 @@ Type THttpClient
 		_userAgent = userAgent
 	End Method
 
-Private
+Internal
 	Function _ClientMain:Object(arg:Object)
 		THttpClient(arg).Run()
 		Return Null
@@ -1068,7 +1068,7 @@ Private
 			easy.setOptString(CURLOPT_USERAGENT, request._userAgent)
 		End If
 
-		easy.setOptInt(CURLOPT_HTTPAUTH, request._authMethod.Ordinal())
+		easy.setOptLong(CURLOPT_HTTPAUTH, request._authMethod.Ordinal())
 
 		' Method + body handling
 		Local hasBody:Int = (request._content <> Null)

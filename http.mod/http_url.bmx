@@ -28,7 +28,7 @@ Rem
 bbdoc: HTTP URL representation and builder.
 End Rem
 Type TUrl
-Private
+Internal
 	Field _urlPtr:Byte Ptr
 Public
 	Rem
@@ -265,7 +265,7 @@ bbdoc: HTTP URL builder.
 about: Use TUrl.Builder() to create a new builder instance.
 End Rem
 Type TUrlBuilder
-Private	
+Internal	
 	Field _url:TUrl
 
 	Method New(url:TUrl)
