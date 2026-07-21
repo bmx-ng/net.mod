@@ -207,6 +207,7 @@ Const CURLOPT_REFERER:Int = CURLOPTTYPE_OBJECTPOINT + 16
 
 Rem
 bbdoc: A String used to get the IP address to use for the ftp PORT instruction.
+about:
 The PORT instruction tells the remote server to connect to our specified IP address. The string may be a plain
 IP address, a host name, an network interface name (under Unix) or just a '-' letter to let the library use your
 systems default IP address. Default FTP operations are passive, and thus won't use PORT.
@@ -320,6 +321,7 @@ Const CURLOPT_COOKIEFILE:Int = CURLOPTTYPE_STRINGPOINT + 31
 
 Rem
 bbdoc: An option to control what version of SSL/TLS to attempt to use.
+about:
 The available options are:
 <table>
 <tr><th>Constant</th><th>Meaning</th></tr>
@@ -580,7 +582,7 @@ Const CURLOPT_INTERFACE:Int = CURLOPTTYPE_OBJECTPOINT + 62
 
 Rem
 bbdoc: Set the kerberos security level for FTP; this also enables kerberos awareness.
-anout: This is a string, 'clear', 'safe', 'confidential' or 'private'. If the string is set but doesn't
+about: This is a string, 'clear', 'safe', 'confidential' or 'private'. If the string is set but doesn't
 match one of these, 'private' will be used. Set the string to Null to disable kerberos support for FTP.
 End Rem
 Const CURLOPT_KRBLEVEL:Int = CURLOPTTYPE_OBJECTPOINT + 63
@@ -1515,8 +1517,7 @@ End Rem
 Const CURLOPT_CHUNK_BGN_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 198
 
 Rem
-bbdoc: Directory matching callback called after the file (chunk)
-     was downloaded, or skipped 
+bbdoc: Directory matching callback called after the file (chunk) was downloaded, or skipped 
 End Rem
 Const CURLOPT_CHUNK_END_FUNCTION:Int = CURLOPTTYPE_FUNCTIONPOINT + 199
 
@@ -2261,8 +2262,7 @@ OK FTP server.
 End Rem
 Const CURLE_FTP_WEIRD_SERVER_REPLY:Int = 8
 Rem
-bbdoc: Error code - We were denied access when trying to login to an FTP server or when trying to change
-working directory to the one given in the URL.
+bbdoc: Error code - We were denied access when trying to login to an FTP server or when trying to change working directory to the one given in the URL.
 End Rem
 Const CURLE_FTP_ACCESS_DENIED:Int = 9
 Rem
