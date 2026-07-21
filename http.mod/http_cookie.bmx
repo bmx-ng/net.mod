@@ -1190,7 +1190,7 @@ Type TCookieHelper
 	Global _cookieAttributeToNameCache:THashMap<ECookieAttribute,String> = New THashMap<ECookieAttribute,String>
 	Global _months:String[] = [ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" ]
 
-	Private
+	Internal
 	Function Init()
 		' Populate cache
 		' pairs of enum/string

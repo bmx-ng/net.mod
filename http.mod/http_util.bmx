@@ -513,7 +513,7 @@ Can be combined using bitwise `|` operator.
 | AnySafe | Allows any safe authentication method (excludes Basic). Uses the one it finds most secure. |
 
 End Rem
-Enum EHttpAuthMethod:Int Flags
+Enum EHttpAuthMethod:UInt Flags
 	None = 0
 	Basic = 1 Shl 0
 	Digest = 1 Shl 1
@@ -532,7 +532,7 @@ Type THttpHelper
 	Global _nameToHeaderCache:THashMap<String,EHttpHeader> = New THashMap<String,EHttpHeader>
 	Global _headerToNameCache:THashMap<EHttpHeader,String> = New THashMap<EHttpHeader,String>
 
-	Private
+	Internal
 	Function Init()
 		' Populate cache
 		' pairs of enum/string
