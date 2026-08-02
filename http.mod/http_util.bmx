@@ -522,7 +522,7 @@ Enum EHttpAuthMethod:UInt Flags
 	DigestIE = 1 Shl 4
 	Bearer = 1 Shl 6
 	AwsSigV4 = 1 Shl 7
-	Only = 1 Shl 31
+	Only = 1:UInt Shl 31
 	Any = Basic | Digest | Negotiate | NtLm | Bearer | AwsSigV4
 	AnySafe = Digest | Negotiate | NtLm | Bearer | AwsSigV4
 End Enum
