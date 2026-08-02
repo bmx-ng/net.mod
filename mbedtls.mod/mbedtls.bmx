@@ -612,7 +612,7 @@ Type TPkContext
 
 	Field contextPtr:Byte Ptr
 	Field _cbRandom:Byte Ptr
-	Field _rng:Byte Ptr
+	Field _rng:Object
 	
 	Method Create:TPkContext()
 		contextPtr = bmx_mbedtls_pk_init()
@@ -647,13 +647,8 @@ Type TPkContext
 	bbdoc: Supply a seeded RNG; skip this unless you ever manage to somehow run into MBEDTLS_ERR_ECP_BAD_INPUT_DATA
 	End Rem
 	Method RNG(cbRandom:Int(rng:Object, output:Byte Ptr, length:Size_T), rng:Object)
-		If TRandContext(rng) Then
-			_rng = TRandContext(rng).contextPtr
-		Else
-			_rng = rng
-		End If
-		
-		_cbRandom = cbRandom
+		_rng = rng
+		_cbRandom = Byte Ptr(cbRandom)
 	End Method
 	
 	Method Delete()
