@@ -1216,7 +1216,7 @@ Internal
 			sb = ConvertCookies(matchedCookies, sb)
 		End If
 
-		If sb <> Null Then
+		If sb Then
 			request._headers.Add(EHttpHeader.Cookie, sb.ToString())
 		End If
 
@@ -1225,7 +1225,7 @@ Internal
 	Method ConvertCookies:TStringBuilder(cookies:TArrayList<THttpCookie>, sb:TStringBuilder)
 
 		For Local cookie:THttpCookie = EachIn cookies
-			If sb = Null Then
+			If Not sb Then
 				sb = New TStringBuilder
 			Else
 				sb.Append("; ")
